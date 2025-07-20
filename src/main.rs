@@ -2,7 +2,6 @@
 
 use crate::parser::WithCodeEmitting;
 
-// mod bytecode;
 mod parser;
 
 fn main() {
@@ -23,6 +22,7 @@ fn main() {
     let mut code = String::new();
     for body in parsed_functions {
         body.emit_code(&mut code);
+        code.push_str("\n\n");
     }
 
     println!("{code}");
