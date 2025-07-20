@@ -1,0 +1,11 @@
+[package]
+name = "tw3-cahirb"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+bincode = { version = "2.0.1", features = ["serde"] }
+bitflags = "2.9.1"
+byteorder = "1.5.0"
+nom = "8.0.0"
+serde = "1.0.219"
