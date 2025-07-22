@@ -15,25 +15,19 @@ pub enum Expression {
 }
 
 impl Expression {
-    pub fn decompile<'a>(
-        mut i: impl InstructionsIterator<'a>,
-    ) -> DecompileNodeResult<'a, impl InstructionsIterator<'a>, Self> {
+    pub fn decompile<'a>(i: InstructionsIter<'a>) -> DecompileNodeResult<'a, Self> {
         Self::decompile_parent_access(i)
     }
 
-    fn decompile_parent_access<'a>(
-        mut i: impl InstructionsIterator<'a>,
-    ) -> DecompileNodeResult<'a, impl InstructionsIterator<'a>, Self> {
-        expect(&mut i, "Parent")?;
-        expect(&mut i, "This")?;
+    fn decompile_parent_access<'a>(i: InstructionsIter<'a>) -> DecompileNodeResult<'a, Self> {
+        let (i, _) = i.expect("Parent")?;
+        let (i, _) = i.expect("This")?;
 
         Ok((i, Self::ParentAccess))
     }
 
-    fn decompile_var_access<'a>(
-        mut i: impl InstructionsIterator<'a>,
-    ) -> DecompileNodeResult<'a, impl InstructionsIterator<'a>, Self> {
-        let (i, some_prefix) = maybe(Self::decompile_parent_access(i.clone()), i);
+    fn decompile_var_access<'a>(i: InstructionsIter<'a>) -> DecompileNodeResult<'a, Self> {
+        let (i, some_prefix) = i.ok(Self::decompile_parent_access(i.clone()));
 
         Ok((
             i,

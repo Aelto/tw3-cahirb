@@ -19,8 +19,13 @@ fn main() {
 
             let parsed = function.parse_bytecode();
 
-            let mut iter = decompiler::iterator::instructions_iter(&parsed.instructions);
-            decompiler::ast::FunctionDeclaration::decompile(&mut iter);
+            let iter = decompiler::iterator::InstructionsIter::new(&parsed.instructions);
+
+            let (_, result) = iter.ok(decompiler::ast::FunctionDeclaration::decompile(
+                iter.clone(),
+            ));
+
+            dbg!(result);
         }
     }
 

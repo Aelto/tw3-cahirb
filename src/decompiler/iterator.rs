@@ -4,27 +4,99 @@ use super::prelude::*;
 
 pub struct InstructionsIter<'a> {
     inner: &'a [Instruction],
-    index: usize,
+    offset_limit: usize,
 }
 
 impl<'a> InstructionsIter<'a> {
-    pub fn new(instruction: &'a Vec<Instruction>) -> Self {
+    pub fn new(instructions: &'a Vec<Instruction>) -> Self {
         Self {
-            inner: &instruction[..],
-            index: 0,
+            inner: &instructions[..],
+            offset_limit: 0,
         }
     }
 
-    pub fn next(&mut self) -> Option<&Instruction> {
+    pub fn next(mut self) -> (Self, Option<&'a Instruction>) {
         while let Some(instr) = self.inner.first() {
             self.inner = &self.inner[1..];
 
+            if !self.instruction_is_within_offset_limit(instr) {
+                return (self, None);
+            }
+
             if !Self::instruction_should_be_skipped(instr) {
-                return Some(instr);
+                return (self, Some(instr));
             }
         }
 
-        None
+        (self, None)
+    }
+
+    pub fn expect(mut self, mnemo: &'static str) -> DecompileResult<'a> {
+        match self.next() {
+            (i, Some(instr)) => {
+                if instr.mnemo == mnemo {
+                    Ok((i, instr))
+                } else {
+                    Err(format!("needed {mnemo} but found {}", instr.mnemo))
+                }
+            }
+            _ => Err(format!("needed {mnemo} but found end of iterator")),
+        }
+    }
+
+    pub fn expect_any(self, mnemos: &[&'static str]) -> DecompileResult<'a> {
+        match self.next() {
+            (i, Some(instr)) => {
+                if mnemos.contains(&instr.mnemo) {
+                    Ok((i, instr))
+                } else {
+                    Err(format!("needed {mnemos:?} but found {}", instr.mnemo))
+                }
+            }
+            _ => Err(format!("needed {mnemos:?} but found end of iterator")),
+        }
+    }
+
+    pub fn maybe(mut self, mnemo: &'static str) -> (Self, Option<&'a Instruction>) {
+        match self.next() {
+            (i, Some(instr)) => {
+                if instr.mnemo == mnemo {
+                    (i, Some(instr))
+                } else {
+                    (i, None)
+                }
+            }
+            (i, None) => (i, None),
+        }
+    }
+
+    pub fn maybe_any(self, mnemos: &[&'static str]) -> (Self, Option<&'a Instruction>) {
+        match self.next() {
+            (i, Some(instr)) => {
+                if mnemos.contains(&instr.mnemo) {
+                    (i, Some(instr))
+                } else {
+                    (i, None)
+                }
+            }
+            (i, None) => (i, None),
+        }
+    }
+
+    pub fn ok<T>(&self, result: DecompileNodeResult<'a, T>) -> (Self, Option<T>) {
+        match result {
+            Ok((i, value)) => (i, Some(value)),
+            Err(_) => (self.clone(), None),
+        }
+    }
+
+    pub fn within_offset_limit(mut self, limit: usize) -> Self {
+        self.offset_limit = limit;
+        self
+    }
+
+    fn instruction_is_within_offset_limit(&self, instruction: &Instruction) -> bool {
+        self.offset_limit <= 0 || instruction.offset <= self.offset_limit
     }
 
     /// Some instructions do not provide any valuable information for decompiling,
@@ -40,80 +112,14 @@ impl<'a> InstructionsIter<'a> {
 impl<'a> Clone for InstructionsIter<'a> {
     fn clone(&self) -> Self {
         Self {
-            inner: self.inner.clone(),
-            index: self.index.clone(),
+            inner: self.inner,
+            offset_limit: self.offset_limit.clone(),
         }
     }
 }
 
-/// Trait aliasing for what's essentially an iterator over instructions, the
-/// key type used in all functions below
-pub trait InstructionsIterator<'a>: Iterator<Item = &'a Instruction> + Clone {}
-impl<'a, T> InstructionsIterator<'a> for T where T: Iterator<Item = &'a Instruction> + Clone {}
-
-pub type DecompileResult<'a> = Result<&'a parser::ast::Instruction, String>;
-pub type DecompileNodeResult<'a, ITER: InstructionsIterator<'a>, T> = Result<(ITER, T), String>;
-
-pub fn instructions_iter<'a>(
-    instructions: &'a Vec<Instruction>,
-) -> impl Iterator<Item = &'a Instruction> + Clone {
-    instructions.iter().filter(|instr| match instr.mnemo {
-        "Nop" | "Context" | "Breakpoint" => false,
-        _ => true,
-    })
-}
-
-pub fn expect<'a>(
-    i: &mut impl Iterator<Item = &'a parser::ast::Instruction>,
-    mnemo: &'static str,
-) -> DecompileResult<'a> {
-    match i.next() {
-        Some(instr) => {
-            if instr.mnemo == mnemo {
-                Ok(instr)
-            } else {
-                Err(format!("needed {mnemo} but found {}", instr.mnemo))
-            }
-        }
-        None => Err(format!("needed {mnemo} but found end of iterator")),
-    }
-}
-
-pub fn expect_any<'a>(
-    i: &mut impl Iterator<Item = &'a parser::ast::Instruction>,
-    mnemos: &[&'static str],
-) -> DecompileResult<'a> {
-    match i.next() {
-        Some(instr) => {
-            if mnemos.contains(&instr.mnemo) {
-                Ok(instr)
-            } else {
-                Err(format!("needed {mnemos:?} but found {}", instr.mnemo))
-            }
-        }
-        None => Err(format!("needed {mnemos:?} but found end of iterator")),
-    }
-}
-
-pub fn maybe<'a, T, ITER, ITER2>(
-    decompile_result: DecompileNodeResult<'a, ITER, T>,
-    base_iter: ITER,
-) -> (ITER, Option<T>)
-where
-    ITER: InstructionsIterator<'a>,
-{
-    match decompile_result {
-        Ok((i, node)) => (i, Some(node)),
-        Err(_) => (base_iter, None),
-    }
-}
-
-pub fn within_offset_limit<'a>(
-    i: impl Iterator<Item = &'a parser::ast::Instruction>,
-    limit: usize,
-) -> impl Iterator<Item = &'a parser::ast::Instruction> {
-    i.take_while(move |instr| instr.offset <= limit)
-}
+pub type DecompileNodeResult<'a, T> = Result<(InstructionsIter<'a>, T), String>;
+pub type DecompileResult<'a> = DecompileNodeResult<'a, &'a Instruction>;
 
 pub fn obtain_offset_limit(instruction: &parser::ast::Instruction) -> usize {
     match instruction.operands.get("skip_offset") {
@@ -137,11 +143,40 @@ fn test_iterator_copy() {
         Instruction::new_fake("Context", 2),
     ];
 
-    let mut base = instructions.iter().peekable().skip(1);
-    let one = base.next().map(|i| i.mnemo);
-    let two = base.next().map(|i| i.mnemo);
+    let i = InstructionsIter::new(&instructions);
+    let (i, _) = i.maybe("This");
 
-    assert_eq!(two, one);
+    let (_, one) = i.clone().next();
+    let (_, two) = i.clone().next();
+
+    assert_eq!(two.map(|i| i.mnemo), one.map(|i| i.mnemo));
+}
+
+#[test]
+fn test_iterator_filtering() {
+    let instructions = vec![
+        Instruction {
+            mnemo: "NativeFunction",
+            offset: 1,
+            operands: std::collections::HashMap::from([(
+                "skip_offset",
+                parser::ast::OperandValue::Unsigned32(2),
+            )]),
+            opcode: 0,
+            size: 1,
+        },
+        Instruction::new_fake("Context", 2), // should be skipped
+        Instruction::new_fake("Nop", 3),     // should be skipped
+        Instruction::new_fake("This", 4),
+        Instruction::new_fake("Parent", 5),
+    ];
+
+    let base = InstructionsIter::new(&instructions);
+
+    let (base, a) = base.maybe("NativeFunction");
+    let (base, b) = base.maybe("This");
+
+    assert_eq!(true, a.is_some() && b.is_some());
 }
 
 #[test]
@@ -165,22 +200,20 @@ fn test_iterator_within_limit() {
         Instruction::new_fake("Parent", 5),
     ];
 
-    let mut base = instructions.iter().peekable();
+    let mut base = InstructionsIter::new(&instructions);
 
     let mut iter = base.clone();
-    if let Ok(a) = expect(&mut iter, "NativeFunction") {
+    if let Ok((iter, a)) = iter.expect("NativeFunction") {
         let limit = obtain_offset_limit(&a);
         assert_eq!(limit, 3);
 
-        let mut iter = within_offset_limit(iter, limit);
+        let (iter, a) = iter.within_offset_limit(limit).maybe("This");
+        // confirm that the iterator stopped before even reaching the Parent
+        // that is after the offset limit
+        let (iter, b) = iter.maybe("Parent");
 
-        let a = expect(&mut iter, "This");
-        let b = expect(&mut iter, "Context");
-        let c = expect(&mut iter, "Nop"); // the iterator stopped before this one
-        let d = expect(&mut iter, "Parent");
-
-        assert_eq!(true, a.is_ok() && b.is_ok());
-        assert_eq!(false, c.is_ok() || d.is_ok());
+        assert_eq!(true, a.is_some());
+        assert_eq!(false, b.is_some());
     }
 }
 
@@ -191,35 +224,35 @@ fn test_search_progression() {
     let instructions = vec![
         Instruction::new_fake("This", 0),
         Instruction::new_fake("NativeFunction", 1),
-        Instruction::new_fake("Context", 2),
+        Instruction::new_fake("Parent", 2),
     ];
 
-    let mut base = instructions.iter().peekable();
+    let mut base = InstructionsIter::new(&instructions);
 
     // test a successful progression in the iter as all instructions are found
     let mut iter = base.clone();
-    let a = expect(&mut iter, "This");
-    let b = expect(&mut iter, "NativeFunction");
-    let c = expect(&mut iter, "Context");
+    let (iter, a) = iter.maybe("This");
+    let (iter, b) = iter.maybe("NativeFunction");
+    let (iter, c) = iter.maybe("Parent");
 
-    assert_eq!(true, a.is_ok() && b.is_ok() && c.is_ok());
+    assert_eq!(true, a.is_some() && b.is_some() && c.is_some());
 
     // test a failed progression as the second search is invalid
     // in such case the iterator keeps progressing and the invalid item can be
     // ignored if the logic needs it.
     let mut iter = base.clone();
-    let a = expect(&mut iter, "This");
-    let b = expect(&mut iter, "IncorrectMatchInMiddle");
-    let c = expect(&mut iter, "Context");
+    let (iter, a) = iter.maybe("This");
+    let (iter, b) = iter.maybe("IncorrectMatchInMiddle");
+    let (iter, c) = iter.maybe("Parent");
 
-    assert_eq!(true, a.is_ok() && c.is_ok());
-    assert_eq!(false, b.is_ok());
+    assert_eq!(true, a.is_some() && c.is_some());
+    assert_eq!(false, b.is_some());
 
     // test a `any` search with a failed & successfull progression
     let mut iter = base.clone();
-    let a = expect(&mut iter, "This");
-    let b = expect_any(&mut iter, &["IncorrectMatchInMiddle", "NativeFunction"]);
-    let c = expect(&mut iter, "Context");
+    let (iter, a) = iter.maybe("This");
+    let (iter, b) = iter.maybe_any(&["IncorrectMatchInMiddle", "NativeFunction"]);
+    let (iter, c) = iter.maybe("Parent");
 
-    assert_eq!(true, a.is_ok() && b.is_ok() && c.is_ok());
+    assert_eq!(true, a.is_some() && b.is_some() && c.is_some());
 }
