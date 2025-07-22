@@ -47,7 +47,8 @@ impl WithCodeEmitting for ImportTypeRef {
         match self.try_resolve() {
             Some(import_type) => import_type.emit_code(f),
             None => {
-                write!(f, "__unresolved_import_type__").unwrap();
+                // don't emit anything on purpose
+                // write!(f, "__unresolved_import_type__").unwrap();
             }
         }
     }

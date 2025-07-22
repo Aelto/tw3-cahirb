@@ -19,6 +19,9 @@ mod import_function;
 pub use import_function::ImportFunction;
 pub use import_function::ImportFunctionRef;
 
+mod internal_operator;
+pub use internal_operator::InternalOperatorRef;
+
 mod definitions;
 pub use definitions::*;
 

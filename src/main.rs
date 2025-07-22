@@ -2,6 +2,7 @@
 
 use crate::parser::WithCodeEmitting;
 
+mod decompiler;
 mod parser;
 
 fn main() {
@@ -12,18 +13,30 @@ fn main() {
         blob
     };
 
-    let mut parsed_functions = Vec::new();
-    for class in &blob.classes {
-        for function in &class.functions {
-            parsed_functions.push(function.parse_bytecode());
+    if let Some(class) = blob.classes.last() {
+        if let Some(function) = class.functions.last() {
+            println!("Decompiling {}", function.name);
+
+            let parsed = function.parse_bytecode();
+
+            let mut iter = decompiler::iterator::instructions_iter(&parsed.instructions);
+            decompiler::ast::FunctionDeclaration::decompile(&mut iter);
         }
     }
 
-    let mut code = String::new();
-    for body in parsed_functions {
-        body.emit_code(&mut code);
-        code.push_str("\n\n");
-    }
+    // let mut parsed_functions = Vec::new();
+    // for class in &blob.classes {
+    //     for function in &class.functions {
+    //         parsed_functions.push(function.parse_bytecode());
+    //     }
+    // }
 
-    println!("{code}");
+    // let mut code = String::new();
+    // for body in parsed_functions {
+    //     body.emit_code(&mut code);
+    //     code.push_str("\n\n");
+    // }
+
+    // println!("{code}");
+    // // std::fs::write("output.py", code).unwrap();
 }

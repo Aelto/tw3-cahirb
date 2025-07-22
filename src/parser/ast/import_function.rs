@@ -24,8 +24,9 @@ impl WithCodeEmitting for ImportFunction {
     fn emit_code(&self, f: &mut String) {
         use std::fmt::Write;
 
-        self.name.emit_code(f);
         self.scope_type.emit_code(f);
+        f.push_str("::");
+        self.name.emit_code(f);
     }
 }
 

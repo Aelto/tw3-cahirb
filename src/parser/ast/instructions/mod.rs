@@ -19,6 +19,18 @@ pub struct Instruction {
     pub operands: HashMap<&'static str, OperandValue>,
 }
 
+impl Instruction {
+    pub fn new_fake(mnemo: &'static str, offset: usize) -> Self {
+        Self {
+            offset,
+            size: 1,
+            opcode: 0,
+            mnemo,
+            operands: HashMap::new(),
+        }
+    }
+}
+
 impl WithParsing for Instruction {
     fn parse(i: &[u8]) -> nom::IResult<&[u8], Self> {
         let (mut i, byte) = parse_u8(i)?;
@@ -117,7 +129,7 @@ impl WithParsing for Instruction {
                         operands.insert(
                             opr_name,
                             OperandValue::ImportFunction(ImportFunctionRef {
-                                table_index: index as u32,
+                                table_index: (index - 1) as u32,
                             }),
                         );
                     } else if index == -1 {
@@ -125,9 +137,9 @@ impl WithParsing for Instruction {
                     } else if index < -1 {
                         operands.insert(
                             opr_name,
-                            OperandValue::ImportFunctionInternal {
-                                internal_table_index: (-1 * (index + 2)) as usize,
-                            },
+                            OperandValue::ImportFunctionInternal(InternalOperatorRef {
+                                table_index: (-1 * (index + 2)) as usize,
+                            }),
                         );
                     } else {
                         panic!("function index cannot be 0")
@@ -172,17 +184,19 @@ impl WithParsing for Instruction {
 
 impl WithCodeEmitting for Instruction {
     fn emit_code(&self, f: &mut String) {
-        if self.operands.is_empty() {
-            return;
-        }
-
         use std::fmt::Write;
-        write!(f, "\n{}", self.mnemo);
+
+        write!(f, "\n{}", self.mnemo).unwrap();
 
         f.push('(');
         for (key, value) in &self.operands {
+            write!(f, " {key}=");
             value.emit_code(f);
+            f.push(' ');
         }
         f.push(')');
+
+        let (size, offset, opcode) = (self.size, self.offset, self.opcode);
+        write!(f, " size={size} offset={offset} opcode={opcode}").unwrap();
     }
 }

@@ -886,6 +886,6 @@ with open('precompiled.rsblob', 'rb') as f:
         for f in cls.functions:
             # print(f"==== {cls.name}::{f.name} ====")
             for i in dis.disas_iter(f.bytecode):
-                i
+                print(i)
     print("All functions disassembled successfully")
 
