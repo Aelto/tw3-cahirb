@@ -19,7 +19,7 @@ fn main() {
 
             let parsed = function.parse_bytecode();
 
-            let iter = decompiler::iterator::InstructionsIter::new(&parsed.instructions);
+            let iter = decompiler::InstructionsIter::new(&parsed.instructions);
 
             let (_, result) = iter.ok(decompiler::ast::FunctionDeclaration::decompile(
                 iter.clone(),

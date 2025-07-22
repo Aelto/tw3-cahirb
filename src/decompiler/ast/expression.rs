@@ -1,40 +1,27 @@
-use crate::decompiler::prelude::*;
+use crate::{decompiler::prelude::*, parser::WithCodeEmitting};
 
 #[derive(Debug)]
 pub enum Expression {
-    ParentAccess,
-    ThisAccess,
-    VarAccess {
-        prefix: Option<Box<Expression>>,
-        var_name: String,
-    },
-    FunctionCall {
-        fn_name: String,
-        parameters: Vec<Expression>,
-    },
+    MemoryAccess(MemoryAccess),
+    FunctionCall(FunctionCall),
+}
+
+impl WithDecompiling for Expression {
+    fn decompile<'a>(i: InstructionsIter<'a>) -> DecompileNodeResult<'a, Self> {
+        Self::decompile_function_call(i).or_else(|_| Self::decompile_memory_access(i))
+    }
 }
 
 impl Expression {
-    pub fn decompile<'a>(i: InstructionsIter<'a>) -> DecompileNodeResult<'a, Self> {
-        Self::decompile_parent_access(i)
+    fn decompile_memory_access<'a>(i: InstructionsIter<'a>) -> DecompileNodeResult<'a, Self> {
+        let (i, memory_access) = MemoryAccess::decompile(i)?;
+
+        Ok((i, Self::MemoryAccess(memory_access)))
     }
 
-    fn decompile_parent_access<'a>(i: InstructionsIter<'a>) -> DecompileNodeResult<'a, Self> {
-        let (i, _) = i.expect("Parent")?;
-        let (i, _) = i.expect("This")?;
+    fn decompile_function_call<'a>(i: InstructionsIter<'a>) -> DecompileNodeResult<'a, Self> {
+        let (i, function_call) = FunctionCall::decompile(i)?;
 
-        Ok((i, Self::ParentAccess))
-    }
-
-    fn decompile_var_access<'a>(i: InstructionsIter<'a>) -> DecompileNodeResult<'a, Self> {
-        let (i, some_prefix) = i.ok(Self::decompile_parent_access(i.clone()));
-
-        Ok((
-            i,
-            Self::VarAccess {
-                prefix: some_prefix.map(Box::new),
-                var_name: todo!(),
-            },
-        ))
+        Ok((i, Self::FunctionCall(function_call)))
     }
 }

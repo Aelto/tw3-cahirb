@@ -186,7 +186,7 @@ impl WithCodeEmitting for Instruction {
     fn emit_code(&self, f: &mut String) {
         use std::fmt::Write;
 
-        write!(f, "\n{}", self.mnemo).unwrap();
+        write!(f, "{}", self.mnemo).unwrap();
 
         f.push('(');
         for (key, value) in &self.operands {

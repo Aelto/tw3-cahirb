@@ -82,6 +82,7 @@ impl WithCodeEmitting for ParsedFunctionBytecode {
     fn emit_code(&self, output: &mut String) {
         for instr in &self.instructions {
             instr.emit_code(output);
+            output.push('\n');
         }
     }
 }

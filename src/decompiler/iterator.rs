@@ -2,6 +2,7 @@ use std::slice::SliceIndex;
 
 use super::prelude::*;
 
+#[derive(Copy, Clone)]
 pub struct InstructionsIter<'a> {
     inner: &'a [Instruction],
     offset_limit: usize,
@@ -29,6 +30,10 @@ impl<'a> InstructionsIter<'a> {
         }
 
         (self, None)
+    }
+
+    pub fn peek(&self) -> Option<&'a Instruction> {
+        self.inner.first()
     }
 
     pub fn expect(mut self, mnemo: &'static str) -> DecompileResult<'a> {
@@ -90,8 +95,13 @@ impl<'a> InstructionsIter<'a> {
         }
     }
 
-    pub fn within_offset_limit(mut self, limit: usize) -> Self {
-        self.offset_limit = limit;
+    pub fn within_offset_limit(mut self, instruction: &Instruction) -> Self {
+        self.offset_limit = obtain_offset_limit(instruction);
+        self
+    }
+
+    pub fn release_offset_limit(mut self) -> Self {
+        self.offset_limit = 0;
         self
     }
 
@@ -105,15 +115,6 @@ impl<'a> InstructionsIter<'a> {
         match instruction.mnemo {
             "Nop" | "Context" | "Breakpoint" => true,
             _ => false,
-        }
-    }
-}
-
-impl<'a> Clone for InstructionsIter<'a> {
-    fn clone(&self) -> Self {
-        Self {
-            inner: self.inner,
-            offset_limit: self.offset_limit.clone(),
         }
     }
 }
@@ -207,7 +208,7 @@ fn test_iterator_within_limit() {
         let limit = obtain_offset_limit(&a);
         assert_eq!(limit, 3);
 
-        let (iter, a) = iter.within_offset_limit(limit).maybe("This");
+        let (iter, a) = iter.within_offset_limit(a).maybe("This");
         // confirm that the iterator stopped before even reaching the Parent
         // that is after the offset limit
         let (iter, b) = iter.maybe("Parent");
