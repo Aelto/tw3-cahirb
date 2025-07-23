@@ -38,10 +38,13 @@ fn main() {
 
     // let mut code = String::new();
     // for body in parsed_functions {
+    //     use std::fmt::Write;
+
+    //     writeln!(code, "{}", body.definition_description);
     //     body.emit_code(&mut code);
     //     code.push_str("\n\n");
     // }
 
     // println!("{code}");
-    // // std::fs::write("output.py", code).unwrap();
+    // std::fs::write("output.py", code).unwrap();
 }

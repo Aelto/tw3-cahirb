@@ -14,6 +14,7 @@ pub struct FunctionDefinition {
 #[derive(Debug)]
 pub struct ParsedFunctionBytecode {
     pub instructions: Vec<Instruction>,
+    pub definition_description: String,
 }
 
 impl WithParsing for FunctionDefinition {
@@ -66,15 +67,62 @@ impl WithParsing for ParsedFunctionBytecode {
             instructions.push(instruction);
         }
 
-        Ok((i, Self { instructions }))
+        Ok((
+            i,
+            Self {
+                instructions,
+                definition_description: String::new(),
+            },
+        ))
+    }
+}
+
+impl WithCodeEmitting for FunctionDefinition {
+    fn emit_code(&self, f: &mut String) {
+        use std::fmt::Write;
+
+        write!(f, "function ").unwrap();
+        self.name.emit_code(f);
+        f.push('\n');
+
+        write!(f, " - override_class = ").unwrap();
+        self.override_class.emit_code(f);
+        f.push('\n');
+
+        write!(f, " - flags = {}", self.flags).unwrap();
+        f.push('\n');
+
+        write!(f, " - return_type = ").unwrap();
+        if let Some(rt) = self.return_type.as_ref() {
+            rt.emit_code(f);
+        }
+        f.push('\n');
+
+        writeln!(f, " - parameters:").unwrap();
+        for param in &self.parameters {
+            f.push_str("   - ");
+            param.emit_code(f);
+            f.push('\n');
+        }
+
+        writeln!(f, " - locals:").unwrap();
+        for param in &self.locals {
+            f.push_str("   - ");
+            param.emit_code(f);
+            f.push('\n');
+        }
     }
 }
 
 impl FunctionDefinition {
     pub fn parse_bytecode(&self) -> ParsedFunctionBytecode {
-        ParsedFunctionBytecode::parse(self.bytecode.as_ref())
+        let mut output = ParsedFunctionBytecode::parse(self.bytecode.as_ref())
             .expect("function_bytecode_parsing_failure")
-            .1
+            .1;
+
+        self.emit_code(&mut output.definition_description);
+
+        output
     }
 }
 

@@ -34,3 +34,21 @@ impl WithParsing for PropertyDefinition {
         ))
     }
 }
+
+impl WithCodeEmitting for PropertyDefinition {
+    fn emit_code(&self, f: &mut String) {
+        use std::fmt::Write;
+
+        write!(f, "PropertyDefinition(").unwrap();
+        self.name.emit_code(f);
+        write!(f, ", hint={}", self.hint).unwrap();
+        write!(f, ", flags={}", self.flags).unwrap();
+        write!(f, ", type_name=").unwrap();
+        self.type_name.emit_code(f);
+        write!(f, ", class_name=").unwrap();
+        self.class_name.emit_code(f);
+        write!(f, ", binding=").unwrap();
+        self.binding.emit_code(f);
+        write!(f, ")").unwrap();
+    }
+}
