@@ -10,7 +10,7 @@ pub struct FunctionCall {
 impl WithDecompiling for FunctionCall {
     fn decompile<'a>(i: InstructionsIter<'a>) -> DecompileNodeResult<'a, Self> {
         let (i, prefix) = i.ok(MemoryAccess::decompile(i));
-        let (i, fn_name) = i.expect("VirtualFunc")?;
+        let (i, fn_name) = i.expect_any(&["VirtualFunc", "FinalFunc"])?;
 
         let (i, parameters) = Expression::decompile_many(i.within_offset_limit(fn_name))?;
         let (i, _) = i.release_offset_limit().expect("ParamEnd")?;

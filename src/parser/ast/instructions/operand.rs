@@ -54,3 +54,78 @@ impl WithCodeEmitting for OperandValue {
         }
     }
 }
+
+impl TryFrom<&OperandValue> for i32 {
+    type Error = String;
+
+    fn try_from(value: &OperandValue) -> Result<Self, Self::Error> {
+        match value {
+            OperandValue::Integer8(n) => Ok(*n as i32),
+            OperandValue::Integer16(n) => Ok(*n as i32),
+            OperandValue::Integer32(n) => Ok(*n),
+            _ => Err(format!("Failed to convert {value:?} to i32")),
+        }
+    }
+}
+
+impl TryFrom<&OperandValue> for f32 {
+    type Error = String;
+
+    fn try_from(value: &OperandValue) -> Result<Self, Self::Error> {
+        match value {
+            OperandValue::Float(n) => Ok(*n),
+            _ => Err(format!("Failed to convert {value:?} to i32")),
+        }
+    }
+}
+
+impl OperandValue {
+    /// Returns the optional `function` operand's value
+    pub fn function_operand(&self) -> Option<&str> {
+        match self {
+            OperandValue::ImportFunction(import_function_ref) => import_function_ref
+                .try_resolve()
+                .and_then(|f| f.name.try_resolve())
+                .map(|s| s.as_str()),
+            OperandValue::ImportFunctionInternal(internal_operator_ref) => {
+                internal_operator_ref.try_resolve().map(|s| *s)
+            }
+            _ => None,
+        }
+    }
+
+    pub fn is_function(&self, fn_name: &str) -> bool {
+        self.function_operand()
+            .map(|s| fn_name == s)
+            .unwrap_or(false)
+    }
+
+    pub fn is_function_logic_or_bool_bool(&self) -> bool {
+        self.is_function("LogicOr_Bool_Bool") // index: 81
+    }
+
+    pub fn is_function_logic_and_bool_bool(&self) -> bool {
+        self.is_function("LogicAnd_Bool_Bool")
+    }
+
+    pub fn get_comparison_operator(&self) -> Option<crate::decompiler::ast::ComparisonOperator> {
+        use crate::decompiler::ast::ComparisonOperator;
+
+        let Some(fn_name) = self.function_operand() else {
+            return None;
+        };
+
+        match fn_name {
+            s if s.starts_with("Equal") => Some(ComparisonOperator::Equal),
+            s if s.starts_with("NotEqual") => Some(ComparisonOperator::NotEqual),
+
+            s if s.starts_with("Greater") => Some(ComparisonOperator::Greater),
+            s if s.starts_with("GreaterEqual") => Some(ComparisonOperator::GreaterEqual),
+
+            s if s.starts_with("Less") => Some(ComparisonOperator::Less),
+            s if s.starts_with("LessEqual") => Some(ComparisonOperator::LessEqual),
+
+            _ => None,
+        }
+    }
+}

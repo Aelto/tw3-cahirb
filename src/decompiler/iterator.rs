@@ -1,5 +1,7 @@
 use std::slice::SliceIndex;
 
+use crate::parser::ast::OperandValue;
+
 use super::prelude::*;
 
 #[derive(Copy, Clone)]
@@ -33,7 +35,45 @@ impl<'a> InstructionsIter<'a> {
     }
 
     pub fn peek(&self) -> Option<&'a Instruction> {
-        self.inner.first()
+        for instr in self.inner {
+            if !self.instruction_is_within_offset_limit(instr) {
+                return None;
+            }
+
+            if !Self::instruction_should_be_skipped(instr) {
+                return Some(instr);
+            }
+        }
+
+        None
+    }
+
+    pub fn is_after_or_equal(&self, other: &Self) -> bool {
+        self.inner.len() <= other.inner.len()
+
+        // match (self.peek(), other.peek()) {
+        //     (Some(a), Some(b)) => a.offset >= b.offset,
+        //     // no more element
+        //     (Some(a), None) => false,
+        //     (None, Some(b)) => true,
+        //     (None, None) => true,
+        // }
+    }
+
+    pub fn skip_to_next_nop(mut self) -> DecompileResult<'a> {
+        while let Some(instr) = self.inner.first() {
+            self.inner = &self.inner[1..];
+
+            if !self.instruction_is_within_offset_limit(instr) {
+                break;
+            }
+
+            if instr.mnemo == "Nop" {
+                return Ok((self, instr));
+            }
+        }
+
+        Err(format!("needed Nop, but did not find any"))
     }
 
     pub fn expect(mut self, mnemo: &'static str) -> DecompileResult<'a> {
@@ -88,10 +128,25 @@ impl<'a> InstructionsIter<'a> {
         }
     }
 
+    /// utility function to convert a decompile result into an option
     pub fn ok<T>(&self, result: DecompileNodeResult<'a, T>) -> (Self, Option<T>) {
         match result {
             Ok((i, value)) => (i, Some(value)),
             Err(_) => (self.clone(), None),
+        }
+    }
+
+    pub fn operand<'b>(
+        &self,
+        instruction: &'b Instruction,
+        operand: &'static str,
+    ) -> Result<&'b OperandValue, String> {
+        match instruction.operands.get(operand) {
+            Some(v) => Ok(v),
+            None => Err(format!(
+                "tried to get {operand} from {} but found None",
+                instruction.into_emitted_code()
+            )),
         }
     }
 
@@ -105,6 +160,10 @@ impl<'a> InstructionsIter<'a> {
         self
     }
 
+    pub fn is_finished(&self) -> bool {
+        self.peek().is_none()
+    }
+
     fn instruction_is_within_offset_limit(&self, instruction: &Instruction) -> bool {
         self.offset_limit <= 0 || instruction.offset <= self.offset_limit
     }
@@ -113,7 +172,7 @@ impl<'a> InstructionsIter<'a> {
     /// these are skipped internally to keep the logic cleaner.
     fn instruction_should_be_skipped(instruction: &Instruction) -> bool {
         match instruction.mnemo {
-            "Nop" | "Context" | "Breakpoint" => true,
+            "Nop" | "Context" | "Breakpoint" | "Skip" => true,
             _ => false,
         }
     }
@@ -128,6 +187,12 @@ pub fn obtain_offset_limit(instruction: &parser::ast::Instruction) -> usize {
             instruction.offset + *skip_offset as usize
         }
         Some(parser::ast::OperandValue::Unsigned16(skip_offset)) => {
+            instruction.offset + *skip_offset as usize
+        }
+        Some(parser::ast::OperandValue::Integer16(skip_offset)) => {
+            instruction.offset + *skip_offset as usize
+        }
+        Some(parser::ast::OperandValue::Integer32(skip_offset)) => {
             instruction.offset + *skip_offset as usize
         }
         _ => instruction.offset + instruction.size,

@@ -1,6 +1,6 @@
 #![allow(unused)]
 
-use crate::parser::WithCodeEmitting;
+use crate::parser::{WithCodeEmitting, WithTableResolving};
 
 mod decompiler;
 mod parser;
@@ -13,19 +13,61 @@ fn main() {
         blob
     };
 
-    if let Some(class) = blob.classes.last() {
-        if let Some(function) = class.functions.last() {
-            println!("Decompiling {}", function.name);
+    // let functions_to_decompile = vec![
+    //     blob.classes.first().and_then(|c| {
+    //         c.functions
+    //             .iter()
+    //             .find(|f| f.name.try_resolve().unwrap_or(&String::new()) == "handleCurrentChoices")
+    //     }),
+    //     blob.classes.last().and_then(|c| c.functions.last()),
+    // ];
 
+    // for function in functions_to_decompile {
+    //     if let Some(function) = function {
+    //         println!("Decompiling {}", function.name);
+
+    //         let parsed = function.parse_bytecode();
+
+    //         let iter = decompiler::InstructionsIter::new(&parsed.instructions);
+
+    //         let (_, result) = iter.ok(decompiler::ast::FunctionDeclaration::decompile(
+    //             iter.clone(),
+    //         ));
+
+    //         dbg!(result);
+    //     }
+    // }
+
+    'classes: for class in &blob.classes {
+        for function in &class.functions {
             let parsed = function.parse_bytecode();
 
-            let iter = decompiler::InstructionsIter::new(&parsed.instructions);
+            let instructions_iter = decompiler::InstructionsIter::new(&parsed.instructions);
+            let result = decompiler::ast::FunctionDeclaration::decompile(instructions_iter);
 
-            let (_, result) = iter.ok(decompiler::ast::FunctionDeclaration::decompile(
-                iter.clone(),
-            ));
+            match result {
+                Ok(v) => {
+                    if v.0.is_finished() {
+                        println!("✔️ Successfully decompiled {}", function.name);
+                        dbg!(v.1);
+                    } else {
+                        println!("❌ Failed to decompile {}", function.name);
 
-            dbg!(result);
+                        println!(
+                            "  stopped at {:?}",
+                            v.0.peek().map(|i| i.into_emitted_code())
+                        );
+
+                        dbg!(&v.1);
+                        break 'classes;
+                    }
+                }
+                Err(e) => {
+                    println!("❌ Failed to decompile {}", function.name);
+                    println!("  error = {e}");
+                    break 'classes;
+                }
+            }
         }
     }
 
