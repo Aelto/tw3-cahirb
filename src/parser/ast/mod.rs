@@ -123,16 +123,26 @@ pub fn parse_string(i: &[u8]) -> IResult<&[u8], String> {
         return Ok((i, String::from_utf8_lossy(slice).to_string()));
     } else {
         // utf16
-        let (i, slice) = take((len * 2) as usize)(i)?;
+        // let (i, slice) = take((len * 2) as usize)(i)?;
+        let (i, slice) = take((len) as usize)(i)?;
 
-        use byteorder::{ByteOrder, LittleEndian, ReadBytesExt};
-        let mut cursor = std::io::Cursor::new(slice);
-        let mut u16_slice = Vec::new();
+        return Ok((i, String::from_utf8_lossy_owned(Vec::from(slice))));
 
-        while let Ok(utf16_char) = cursor.read_u16::<LittleEndian>() {
-            u16_slice.push(utf16_char);
-        }
+        // the old code used to handle utf16, but all strings are utf8 now:
+        //
 
-        return Ok((i, String::from_utf16_lossy(&u16_slice)));
+        // use byteorder::{ByteOrder, LittleEndian, ReadBytesExt};
+        // let mut cursor = std::io::Cursor::new(slice);
+        // let mut u16_slice = Vec::new();
+
+        // while let Ok(utf16_char) = cursor.read_u16::<LittleEndian>() {
+        //     u16_slice.push(utf16_char);
+        // }
+        // let string = dbg!(String::from_utf16(&u16_slice));
+
+        // dbg!(&String::from_utf8(Vec::from(slice)));
+        // dbg!(String::from_utf16le_lossy(&slice));
+
+        // return Ok((i, String::from_utf16le_lossy(&slice)));
     }
 }
