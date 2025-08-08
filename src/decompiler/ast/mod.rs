@@ -1,6 +1,9 @@
 mod function_call;
 pub use function_call::FunctionCall;
 
+mod constructor_call;
+pub use constructor_call::ConstructorCall;
+
 mod function_declaration;
 pub use function_declaration::FunctionDeclaration;
 
@@ -37,6 +40,9 @@ pub use type_conversion::TypeConversion;
 
 mod return_statement;
 pub use return_statement::Return;
+
+mod switch;
+pub use switch::Switch;
 
 mod globals;
 pub use globals::Globals;

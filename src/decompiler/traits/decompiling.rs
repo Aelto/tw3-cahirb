@@ -1,13 +1,14 @@
 use crate::decompiler::{DecompileNodeResult, InstructionsIter};
 
-pub trait WithDecompiling: Sized {
+pub trait WithDecompiling: Sized + std::fmt::Debug {
     fn decompile<'a>(i: InstructionsIter<'a>) -> DecompileNodeResult<'a, Self>;
 
     fn decompile_many<'a>(mut i: InstructionsIter<'a>) -> DecompileNodeResult<'a, Vec<Self>> {
         let mut output = Vec::new();
+        let limit = i.offset_limit();
         while let Ok((new_i, item)) = Self::decompile(i) {
             output.push(item);
-            i = new_i;
+            i = new_i.within_offset_limit_absolute(limit);
         }
 
         Ok((i, output))

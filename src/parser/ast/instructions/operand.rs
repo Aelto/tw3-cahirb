@@ -63,6 +63,8 @@ impl TryFrom<&OperandValue> for i32 {
             OperandValue::Integer8(n) => Ok(*n as i32),
             OperandValue::Integer16(n) => Ok(*n as i32),
             OperandValue::Integer32(n) => Ok(*n),
+            OperandValue::Unsigned8(n) => Ok(*n as i32),
+            OperandValue::Unsigned16(n) => Ok(*n as i32),
             _ => Err(format!("Failed to convert {value:?} to i32")),
         }
     }
@@ -80,6 +82,32 @@ impl TryFrom<&OperandValue> for f32 {
 }
 
 impl OperandValue {
+    pub fn to_i32(&self) -> Option<u32> {
+        match self {
+            OperandValue::Unsigned8(v) => Some(*v as u32),
+            OperandValue::Unsigned16(v) => Some(*v as u32),
+            OperandValue::Unsigned32(v) => Some(*v as u32),
+            OperandValue::Integer8(v) => Some(*v as u32),
+            OperandValue::Integer16(v) => Some(*v as u32),
+            OperandValue::Integer32(v) => Some(*v as u32),
+            _ => None,
+        }
+    }
+
+    pub fn as_import_type(&self) -> Option<&ImportType> {
+        match self {
+            Self::ImportType(r) => r.try_resolve(),
+            _ => None,
+        }
+    }
+
+    pub fn as_str(&self) -> Option<&str> {
+        match self {
+            OperandValue::String(v) => Some(&v),
+            _ => None,
+        }
+    }
+
     /// Returns the optional `function` operand's value
     pub fn function_operand(&self) -> Option<&str> {
         match self {
@@ -94,6 +122,13 @@ impl OperandValue {
         }
     }
 
+    pub fn is_function_internal_operator(&self) -> bool {
+        match self {
+            OperandValue::ImportFunctionInternal(_) => true,
+            _ => false,
+        }
+    }
+
     pub fn is_function(&self, fn_name: &str) -> bool {
         self.function_operand()
             .map(|s| fn_name == s)
@@ -102,6 +137,10 @@ impl OperandValue {
 
     pub fn is_function_logic_or_bool_bool(&self) -> bool {
         self.is_function("LogicOr_Bool_Bool") // index: 81
+    }
+
+    pub fn is_function_logic_not_bool(&self) -> bool {
+        self.is_function("LogicNot_Bool")
     }
 
     pub fn is_function_logic_and_bool_bool(&self) -> bool {

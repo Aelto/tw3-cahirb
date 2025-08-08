@@ -18,6 +18,14 @@ impl<'a> InstructionsIter<'a> {
         }
     }
 
+    pub fn offset(&self) -> Option<usize> {
+        self.peek().map(|i| i.offset)
+    }
+
+    pub fn offset_limit(&self) -> usize {
+        self.offset_limit
+    }
+
     pub fn next(mut self) -> (Self, Option<&'a Instruction>) {
         while let Some(instr) = self.inner.first() {
             self.inner = &self.inner[1..];
@@ -49,15 +57,15 @@ impl<'a> InstructionsIter<'a> {
     }
 
     pub fn is_after_or_equal(&self, other: &Self) -> bool {
-        self.inner.len() <= other.inner.len()
+        // self.inner.len() <= other.inner.len()
 
-        // match (self.peek(), other.peek()) {
-        //     (Some(a), Some(b)) => a.offset >= b.offset,
-        //     // no more element
-        //     (Some(a), None) => false,
-        //     (None, Some(b)) => true,
-        //     (None, None) => true,
-        // }
+        match (self.peek(), other.peek()) {
+            (Some(a), Some(b)) => a.offset >= b.offset,
+            // no more element
+            (Some(a), None) => false,
+            (None, Some(b)) => true,
+            (None, None) => true,
+        }
     }
 
     pub fn skip_to_next_nop(mut self) -> DecompileResult<'a> {
@@ -151,7 +159,17 @@ impl<'a> InstructionsIter<'a> {
     }
 
     pub fn within_offset_limit(mut self, instruction: &Instruction) -> Self {
-        self.offset_limit = obtain_offset_limit(instruction);
+        self.offset_limit = obtain_offset_limit(instruction).max(0) as usize;
+        self
+    }
+
+    pub fn within_offset_limit_raw(mut self, instruction: &Instruction, raw_offset: usize) -> Self {
+        self.offset_limit = instruction.offset + raw_offset;
+        self
+    }
+
+    pub fn within_offset_limit_absolute(mut self, raw_offset: usize) -> Self {
+        self.offset_limit = raw_offset;
         self
     }
 
@@ -178,24 +196,39 @@ impl<'a> InstructionsIter<'a> {
     }
 }
 
+impl std::fmt::Debug for InstructionsIter<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("InstructionsIter")
+            .field("inner[0]", &self.inner.get(0))
+            .field("offset_limit", &self.offset_limit)
+            .finish()
+    }
+}
+
 pub type DecompileNodeResult<'a, T> = Result<(InstructionsIter<'a>, T), String>;
 pub type DecompileResult<'a> = DecompileNodeResult<'a, &'a Instruction>;
 
-pub fn obtain_offset_limit(instruction: &parser::ast::Instruction) -> usize {
-    match instruction.operands.get("skip_offset") {
+pub fn obtain_offset_limit(instruction: &parser::ast::Instruction) -> i64 {
+    let base = (instruction.offset + instruction.size) as i64;
+
+    match instruction
+        .operands
+        .get("skip_offset")
+        .or_else(|| instruction.operands.get("unused")) // this one is used by switch labels
+    {
         Some(parser::ast::OperandValue::Unsigned32(skip_offset)) => {
-            instruction.offset + *skip_offset as usize
+            base + *skip_offset as i64
         }
         Some(parser::ast::OperandValue::Unsigned16(skip_offset)) => {
-            instruction.offset + *skip_offset as usize
+            base + *skip_offset as i64
         }
         Some(parser::ast::OperandValue::Integer16(skip_offset)) => {
-            instruction.offset + *skip_offset as usize
+            base + *skip_offset as i64
         }
         Some(parser::ast::OperandValue::Integer32(skip_offset)) => {
-            instruction.offset + *skip_offset as usize
+            base + *skip_offset as i64
         }
-        _ => instruction.offset + instruction.size,
+        _ => base,
     }
 }
 

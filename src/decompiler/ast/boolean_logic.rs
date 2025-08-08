@@ -10,14 +10,18 @@ pub enum BooleanLogic {
         left: Box<Expression>,
         right: Box<Expression>,
     },
+    Not(Box<Expression>),
     Comparison(BooleanComparison),
+    ImplicitConversion(Box<TypeConversion>),
 }
 
 impl WithDecompiling for BooleanLogic {
     fn decompile<'a>(i: InstructionsIter<'a>) -> DecompileNodeResult<'a, Self> {
         Self::decompile_or(i)
             .or_else(|_| Self::decompile_and(i))
+            .or_else(|_| Self::decompile_not(i))
             .or_else(|_| Self::decompile_comparison(i))
+            .or_else(|_| Self::decompile_implicit_conversion(i))
     }
 }
 
@@ -56,9 +60,28 @@ impl BooleanLogic {
         Ok((i, Self::And { left, right }))
     }
 
+    fn decompile_not<'a>(i: InstructionsIter<'a>) -> DecompileNodeResult<'a, Self> {
+        let (i, func) = i.expect("FinalFunc")?;
+
+        if !i.operand(func, "function")?.is_function_logic_not_bool() {
+            return Err("BooleanLogic_not, expected NOT logic function".to_owned());
+        }
+
+        let ((i, expr)) = Expression::decompile_boxed(i)?;
+        let ((i, _)) = i.expect("ParamEnd")?;
+
+        Ok((i, Self::Not(expr)))
+    }
+
     fn decompile_comparison<'a>(i: InstructionsIter<'a>) -> DecompileNodeResult<'a, Self> {
         let (i, comparison) = BooleanComparison::decompile(i)?;
 
         Ok((i, Self::Comparison(comparison)))
+    }
+
+    fn decompile_implicit_conversion<'a>(i: InstructionsIter<'a>) -> DecompileNodeResult<'a, Self> {
+        let (i, conversion) = TypeConversion::decompile_boxed(i)?;
+
+        Ok((i, Self::ImplicitConversion(conversion)))
     }
 }

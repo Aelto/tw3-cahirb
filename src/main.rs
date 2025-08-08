@@ -1,4 +1,5 @@
 #![allow(unused)]
+#![feature(string_from_utf8_lossy_owned)]
 
 use crate::parser::{WithCodeEmitting, WithTableResolving};
 
@@ -49,7 +50,7 @@ fn main() {
                 Ok(v) => {
                     if v.0.is_finished() {
                         println!("✔️ Successfully decompiled {}", function.name);
-                        dbg!(v.1);
+                        // dbg!(v.1);
                     } else {
                         println!("❌ Failed to decompile {}", function.name);
 
@@ -58,7 +59,7 @@ fn main() {
                             v.0.peek().map(|i| i.into_emitted_code())
                         );
 
-                        dbg!(&v.1);
+                        // dbg!(&v.1);
                         break 'classes;
                     }
                 }
@@ -71,22 +72,38 @@ fn main() {
         }
     }
 
-    // let mut parsed_functions = Vec::new();
-    // for class in &blob.classes {
-    //     for function in &class.functions {
-    //         parsed_functions.push(function.parse_bytecode());
-    //     }
-    // }
+    // parse_and_emit_instructions(blob);
+}
 
-    // let mut code = String::new();
-    // for body in parsed_functions {
-    //     use std::fmt::Write;
+fn parse_and_emit_instructions(blob: parser::RsBlob) {
+    let mut parsed_functions = Vec::new();
 
-    //     writeln!(code, "{}", body.definition_description);
-    //     body.emit_code(&mut code);
-    //     code.push_str("\n\n");
-    // }
+    for class in &blob.classes {
+        for function in &class.functions {
+            println!("parsing {}", function.name);
+            parsed_functions.push(function.parse_bytecode());
+        }
+    }
 
-    // println!("{code}");
-    // std::fs::write("output.py", code).unwrap();
+    for func in &blob.ext_replace_global_functions {
+        println!("parsing {}", func.name);
+        parsed_functions.push(func.parse_bytecode());
+    }
+
+    for func in &blob.ext_replace_class_functions {
+        println!("parsing {}", func.name);
+        parsed_functions.push(func.parse_bytecode());
+    }
+
+    let mut code = String::new();
+    for body in parsed_functions {
+        use std::fmt::Write;
+
+        writeln!(code, "{}", body.definition_description);
+        body.emit_code(&mut code);
+        code.push_str("\n\n");
+    }
+
+    println!("{code}");
+    std::fs::write("output.py", code).unwrap();
 }

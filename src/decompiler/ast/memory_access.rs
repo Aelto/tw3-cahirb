@@ -25,6 +25,11 @@ pub enum MemoryAccess {
         prefix: Box<MemoryAccess>,
     },
 
+    ArrayIndexing {
+        prefix: Box<MemoryAccess>,
+        index: Box<Expression>,
+    },
+
     Global(Globals),
 }
 
@@ -45,6 +50,7 @@ impl MemoryAccess {
             .or_else(|_| Self::decompile_var_param_access(i))
             .or_else(|_| Self::decompile_local_var_access(i))
             .or_else(|_| Self::decompile_local_global_access(i))
+            .or_else(|_| Self::decompile_array_indexing(i))
     }
 
     fn decompile_this_access<'a>(i: InstructionsIter<'a>) -> DecompileNodeResult<'a, Self> {
@@ -112,6 +118,20 @@ impl MemoryAccess {
             Self::StructMember {
                 member_name: struct_node.into_emitted_code(),
                 prefix: Box::new(prefix),
+            },
+        ))
+    }
+
+    fn decompile_array_indexing<'a>(i: InstructionsIter<'a>) -> DecompileNodeResult<'a, Self> {
+        let (i, _) = i.expect("ArrayElement")?;
+        let (i, prefix) = Self::decompile_prefix(i)?;
+        let (i, index) = Expression::decompile_boxed(i)?;
+
+        Ok((
+            i,
+            Self::ArrayIndexing {
+                prefix: Box::new(prefix),
+                index,
             },
         ))
     }

@@ -72,7 +72,7 @@ impl BooleanComparison {
             Self {
                 left,
                 right,
-                operator: ComparisonOperator::NotEqual,
+                operator: ComparisonOperator::Equal,
             },
         ))
     }

@@ -12,6 +12,7 @@ impl WithDecompiling for Number {
             .or_else(|_| Self::decompile_int_zero(i))
             .or_else(|_| Self::decompile_int_one(i))
             .or_else(|_| Self::decompile_short(i))
+            .or_else(|_| Self::decompile_byte(i))
             .or_else(|_| Self::decompile_float(i))
     }
 }
@@ -40,6 +41,15 @@ impl Number {
 
     fn decompile_short<'a>(i: InstructionsIter<'a>) -> DecompileNodeResult<'a, Self> {
         let (i, instr) = i.expect("ShortConst")?;
+        let value = i.operand(instr, "value")?;
+
+        let value: i32 = i32::try_from(value)?;
+
+        Ok((i, Self::Int(value)))
+    }
+
+    fn decompile_byte<'a>(i: InstructionsIter<'a>) -> DecompileNodeResult<'a, Self> {
+        let (i, instr) = i.expect("ByteConst")?;
         let value = i.operand(instr, "value")?;
 
         let value: i32 = i32::try_from(value)?;

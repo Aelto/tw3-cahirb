@@ -29,6 +29,32 @@ impl Instruction {
             operands: HashMap::new(),
         }
     }
+
+    pub fn is_function_with_param_end(&self) -> bool {
+        self.operands
+            .get("function")
+            // internal operators rarely have a ParamEnd instruction behind,
+            // EXCEPT for a few
+            .map(|op| {
+                !op.is_function_internal_operator()
+                    || match op.function_operand() {
+                        Some("Add_String_String")
+                        | Some("LogicNot_Bool")
+                        | Some("Neg_Int32") // not sure
+                        | Some("Subtract_Float_Float") => true,
+                        | Some(s) => s.starts_with("Add_") || s.starts_with("Substract_") || s.starts_with("Multiply_") || s.starts_with("Divide_") || s.starts_with("Assign"),
+                        _ => false,
+                    }
+            })
+            .unwrap_or(true)
+    }
+
+    pub fn to_dynamic_cast_type(&self) -> Option<String> {
+        self.operands
+            .get("type")
+            .and_then(|op| op.as_import_type())
+            .map(|ty| ty.into_emitted_code())
+    }
 }
 
 impl WithParsing for Instruction {
@@ -119,7 +145,7 @@ impl WithParsing for Instruction {
 
                     let len = value.len();
                     operands.insert(*opr_name, OperandValue::String(value));
-                    operands_runtime_size += 4 * len;
+                    operands_runtime_size += 4 + len;
                 }
                 "imp_func" => {
                     let (new_i, index) = parse_compressed_i32(i)?;

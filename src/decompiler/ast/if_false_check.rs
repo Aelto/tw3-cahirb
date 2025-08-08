@@ -2,7 +2,7 @@ use crate::decompiler::prelude::*;
 
 #[derive(Debug)]
 pub struct IfFalseCheck {
-    condition: BooleanLogic,
+    condition: Box<Expression>,
     body: Vec<Expression>,
     else_check: Option<ElseCheck>,
 }
@@ -15,12 +15,16 @@ struct ElseCheck {
 impl WithDecompiling for IfFalseCheck {
     fn decompile<'a>(i: InstructionsIter<'a>) -> DecompileNodeResult<'a, Self> {
         let (i, if_check) = i.expect("JumpIfFalse")?;
-        let (i, condition) = BooleanLogic::decompile(i)?;
+        let (i, condition) = Expression::decompile_boxed(i)?;
 
         let mut i = i.within_offset_limit(if_check);
         let mut body = Vec::new();
         let mut some_else_check = None;
         loop {
+            if i.is_finished() {
+                break;
+            }
+
             if let Ok((new_i, else_check)) = ElseCheck::decompile(i) {
                 i = new_i;
                 some_else_check = Some(else_check);
@@ -31,7 +35,7 @@ impl WithDecompiling for IfFalseCheck {
                 break;
             };
 
-            i = new_i;
+            i = new_i.within_offset_limit(if_check);
             body.push(expression);
         }
 

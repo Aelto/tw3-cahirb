@@ -6,11 +6,15 @@ pub enum TypeConversion {
         casting: ImplicitCastingType,
         expression: Expression,
     },
+    DynamicCasting {
+        target_type: String,
+        expression: Expression,
+    },
 }
 
 impl WithDecompiling for TypeConversion {
     fn decompile<'a>(i: InstructionsIter<'a>) -> DecompileNodeResult<'a, Self> {
-        Self::decompile_implicit_casting(i)
+        Self::decompile_implicit_casting(i).or_else(|_| Self::decompile_dynamic_casting(i))
     }
 }
 
@@ -24,6 +28,25 @@ impl TypeConversion {
             Self::ImplicitCasting {
                 casting,
                 expression,
+            },
+        ))
+    }
+
+    fn decompile_dynamic_casting<'a>(i: InstructionsIter<'a>) -> DecompileNodeResult<'a, Self> {
+        let (i, casting) = i.expect("DynamicCast")?;
+        let (i, expression) = Expression::decompile(i)?;
+
+        let Some(target_type) = casting.to_dynamic_cast_type() else {
+            return Err(
+                "TypeConversion::DynamicCasting, expected type operand on instruction but did not find any".to_owned(),
+            );
+        };
+
+        Ok((
+            i,
+            Self::DynamicCasting {
+                target_type: target_type,
+                expression: expression,
             },
         ))
     }
