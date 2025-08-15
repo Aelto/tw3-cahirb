@@ -12,6 +12,7 @@ pub enum Expression {
     IfFalseCheck(IfFalseCheck),
     BooleanLogic(BooleanLogic),
     Return(Box<Return>),
+    Delete(Box<Delete>),
     TypeConvertedExpression(Box<TypeConversion>),
     Switch(Box<Switch>),
 
@@ -26,6 +27,7 @@ impl WithDecompiling for Expression {
             .or_else(|_| Self::decompile_function_call(i))
             .or_else(|_| Self::decompile_constructor_call(i))
             .or_else(|_| Self::decompile_return(i))
+            .or_else(|_| Self::decompile_delete(i))
             .or_else(|_| Self::decompile_memory_access(i))
             .or_else(|_| Self::decompile_memory_assign(i))
             .or_else(|_| Self::decompile_name_const(i))
@@ -97,6 +99,12 @@ impl Expression {
         let (i, return_statement) = Return::decompile_boxed(i)?;
 
         Ok((i, Self::Return(return_statement)))
+    }
+
+    fn decompile_delete<'a>(i: InstructionsIter<'a>) -> DecompileNodeResult<'a, Self> {
+        let (i, delete_statement) = Delete::decompile_boxed(i)?;
+
+        Ok((i, Self::Delete(delete_statement)))
     }
 
     fn decompile_type_converted<'a>(i: InstructionsIter<'a>) -> DecompileNodeResult<'a, Self> {
