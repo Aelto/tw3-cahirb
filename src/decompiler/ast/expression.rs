@@ -9,6 +9,7 @@ pub enum Expression {
     NameConst(NameConst),
     StringConst(StringConst),
     Number(Number),
+    Null,
     IfFalseCheck(IfFalseCheck),
     BooleanLogic(BooleanLogic),
     Return(Box<Return>),
@@ -24,6 +25,7 @@ pub enum Expression {
 impl WithDecompiling for Expression {
     fn decompile<'a>(i: InstructionsIter<'a>) -> DecompileNodeResult<'a, Self> {
         Self::decompile_boolean_logic(i)
+            .or_else(|_| Self::decompile_null(i))
             .or_else(|_| Self::decompile_function_call(i))
             .or_else(|_| Self::decompile_constructor_call(i))
             .or_else(|_| Self::decompile_return(i))
@@ -123,5 +125,11 @@ impl Expression {
         let (i, _) = i.expect("Jump")?;
 
         Ok((i, Self::Jump))
+    }
+
+    fn decompile_null<'a>(i: InstructionsIter<'a>) -> DecompileNodeResult<'a, Self> {
+        let (i, _) = i.expect("Null")?;
+
+        Ok((i, Self::Null))
     }
 }
