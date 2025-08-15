@@ -13,6 +13,7 @@ impl WithDecompiling for FunctionCall {
         Self::decompile_standard_call(i)
             .or_else(|_| Self::decompile_array_size_call(i))
             .or_else(|_| Self::decompile_array_push_back(i))
+            .or_else(|_| Self::decompile_array_clear_call(i))
     }
 }
 
@@ -70,6 +71,23 @@ impl FunctionCall {
                 prefix,
                 fn_name: "PushBack".to_owned(),
                 parameters: vec![param],
+                dbg: false,
+            },
+        ))
+    }
+
+    fn decompile_array_clear_call<'a>(i: InstructionsIter<'a>) -> DecompileNodeResult<'a, Self> {
+        // array clear goes first, the memory access comes after unlike standard
+        // function calls:
+        let (i, fn_name) = i.expect("ArrayClear")?;
+        let (i, prefix) = i.ok(MemoryAccess::decompile(i));
+
+        Ok((
+            i,
+            Self {
+                prefix,
+                fn_name: "Clear".to_owned(),
+                parameters: Vec::new(),
                 dbg: false,
             },
         ))
