@@ -19,19 +19,19 @@ impl WithDecompiling for FunctionCall {
 
 impl FunctionCall {
     fn decompile_standard_call<'a>(i: InstructionsIter<'a>) -> DecompileNodeResult<'a, Self> {
-        let (i, prefix) = i.ok(MemoryAccess::decompile(i));
+        let (i, prefix) = MemoryAccess::decompile_maybe(i);
         let (i, fn_name) = i.expect_any(&["VirtualFunc", "FinalFunc"])?;
 
         let (i, parameters) = Expression::decompile_many(i.within_offset_limit(fn_name))?;
-        let mut i = i.release_offset_limit();
+        let mut i = i;
 
-        if fn_name.is_function_with_param_end() {
-            let (new_i, _) = i.expect("ParamEnd")?;
-            i = new_i;
-        }
+        // if fn_name.is_function_with_param_end() {
+        let (new_i, _) = i.expect("ParamEnd")?;
+        i = new_i;
+        // }
 
         Ok((
-            i,
+            i.release_offset_limit(),
             Self {
                 prefix,
                 fn_name: fn_name.into_emitted_code(),
