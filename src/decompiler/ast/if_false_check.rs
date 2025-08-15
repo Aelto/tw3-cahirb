@@ -25,7 +25,8 @@ impl WithDecompiling for IfFalseCheck {
                 break;
             }
 
-            if let Ok((new_i, else_check)) = ElseCheck::decompile(i) {
+            // else cases are outside the skip_offset from the if
+            if let Ok((new_i, else_check)) = ElseCheck::decompile(i.release_offset_limit()) {
                 i = new_i;
                 some_else_check = Some(else_check);
                 break;
