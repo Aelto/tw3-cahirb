@@ -39,6 +39,11 @@ fn main() {
     //     }
     // }
 
+    decompile_bytecode(blob);
+    // parse_and_emit_instructions(blob);
+}
+
+fn decompile_bytecode(blob: parser::RsBlob) {
     'classes: for class in &blob.classes {
         for function in &class.functions {
             let parsed = function.parse_bytecode();
@@ -71,8 +76,6 @@ fn main() {
             }
         }
     }
-
-    // parse_and_emit_instructions(blob);
 }
 
 fn parse_and_emit_instructions(blob: parser::RsBlob) {
