@@ -13,6 +13,7 @@ pub enum BooleanLogic {
     Not(Box<Expression>),
     Comparison(BooleanComparison),
     ImplicitConversion(Box<TypeConversion>),
+    Boolean(BooleanConst),
 }
 
 impl WithDecompiling for BooleanLogic {
@@ -20,6 +21,7 @@ impl WithDecompiling for BooleanLogic {
         Self::decompile_or(i)
             .or_else(|_| Self::decompile_and(i))
             .or_else(|_| Self::decompile_not(i))
+            .or_else(|_| Self::decompile_boolean_const(i))
             .or_else(|_| Self::decompile_comparison(i))
             .or_else(|_| Self::decompile_implicit_conversion(i))
     }
@@ -83,5 +85,11 @@ impl BooleanLogic {
         let (i, conversion) = TypeConversion::decompile_boxed(i)?;
 
         Ok((i, Self::ImplicitConversion(conversion)))
+    }
+
+    fn decompile_boolean_const<'a>(i: InstructionsIter<'a>) -> DecompileNodeResult<'a, Self> {
+        let (i, boolean) = BooleanConst::decompile(i)?;
+
+        Ok((i, Self::Boolean(boolean)))
     }
 }
