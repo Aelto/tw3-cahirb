@@ -35,11 +35,17 @@ mod boolean_comparison;
 pub use boolean_comparison::BooleanComparison;
 pub use boolean_comparison::ComparisonOperator;
 
+mod boolean_const;
+pub use boolean_const::BooleanConst;
+
 mod type_conversion;
 pub use type_conversion::TypeConversion;
 
 mod return_statement;
 pub use return_statement::Return;
+
+mod delete_statement;
+pub use delete_statement::Delete;
 
 mod switch;
 pub use switch::Switch;

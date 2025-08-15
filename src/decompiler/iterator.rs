@@ -56,6 +56,24 @@ impl<'a> InstructionsIter<'a> {
         None
     }
 
+    pub fn find_next(mut self, mnemo: &'static str) -> (Self, Option<&'a Instruction>) {
+        while let Some(instr) = self.inner.first() {
+            self.inner = &self.inner[1..];
+
+            if !self.instruction_is_within_offset_limit(instr) {
+                break;
+            }
+
+            if instr.mnemo == mnemo {
+                return (self, Some(instr));
+            } else {
+                break;
+            }
+        }
+
+        (self, None)
+    }
+
     pub fn is_after_or_equal(&self, other: &Self) -> bool {
         // self.inner.len() <= other.inner.len()
 
@@ -66,22 +84,6 @@ impl<'a> InstructionsIter<'a> {
             (None, Some(b)) => true,
             (None, None) => true,
         }
-    }
-
-    pub fn skip_to_next_nop(mut self) -> DecompileResult<'a> {
-        while let Some(instr) = self.inner.first() {
-            self.inner = &self.inner[1..];
-
-            if !self.instruction_is_within_offset_limit(instr) {
-                break;
-            }
-
-            if instr.mnemo == "Nop" {
-                return Ok((self, instr));
-            }
-        }
-
-        Err(format!("needed Nop, but did not find any"))
     }
 
     pub fn expect(mut self, mnemo: &'static str) -> DecompileResult<'a> {
@@ -176,6 +178,21 @@ impl<'a> InstructionsIter<'a> {
     pub fn release_offset_limit(mut self) -> Self {
         self.offset_limit = 0;
         self
+    }
+
+    pub fn release_exhausted_offset_limit(mut self) -> Result<Self, String> {
+        if self.offset_limit > 0
+            && let Some(next) = self.peek()
+        {
+            if self.instruction_is_within_offset_limit(next) {
+                return Err(format!(
+                    "Expected Iterator to have exhausted offset at {}, but the following instruction was found: \n {next:?}",
+                    self.offset_limit
+                ));
+            }
+        }
+
+        Ok(self.release_offset_limit())
     }
 
     pub fn is_finished(&self) -> bool {
