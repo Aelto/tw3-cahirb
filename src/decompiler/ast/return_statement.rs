@@ -9,8 +9,8 @@ impl WithDecompiling for Return {
     fn decompile<'a>(i: InstructionsIter<'a>) -> DecompileNodeResult<'a, Self> {
         let (i, _) = i.expect("Return")?;
 
-        let (nop_i, _) = i.clone().skip_to_next_nop()?;
         let (exp_i, expression) = Expression::decompile_maybe(i);
+        let (nop_i, nop) = exp_i.find_next("Nop");
 
         let (i, expression) = expression
             .map(|expr| match exp_i.is_after_or_equal(&nop_i) {
