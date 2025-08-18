@@ -35,9 +35,7 @@ pub enum MemoryAccess {
 
 impl WithDecompiling for MemoryAccess {
     fn decompile<'a>(i: InstructionsIter<'a>) -> DecompileNodeResult<'a, Self> {
-        Self::decompile_var_access(i)
-            .or_else(|_| Self::decompile_struct_member_access(i))
-            .or_else(|_| Self::decompile_prefix(i))
+        Self::decompile_var_access(i).or_else(|_| Self::decompile_prefix(i))
     }
 }
 
@@ -46,6 +44,7 @@ impl MemoryAccess {
     /// causing a stack overflow.
     fn decompile_prefix<'a>(i: InstructionsIter<'a>) -> DecompileNodeResult<'a, Self> {
         Self::decompile_parent_access(i)
+            .or_else(|_| Self::decompile_struct_member_access(i))
             .or_else(|_| Self::decompile_this_access(i))
             .or_else(|_| Self::decompile_var_param_access(i))
             .or_else(|_| Self::decompile_local_var_access(i))
