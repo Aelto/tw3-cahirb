@@ -11,4 +11,4 @@ nom = "8.0.0"
 serde = "1.0.219"
 
 # alternative to rayon
-# orx-parallel = "2.2.0"
+orx-parallel = "3.0.0"

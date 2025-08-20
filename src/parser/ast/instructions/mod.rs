@@ -41,9 +41,12 @@ impl Instruction {
                         Some("Add_String_String")
                         | Some("LogicNot_Bool")
                         | Some("Neg_Int32") // not sure
-                        | Some("Subtract_Float_Float") => true,
+                        | Some("Subtract_Float_Float")
+                        // | Some("Add_Int32_Int32")
+                        // | Some("LessEqual_Float_Float")
+                            => true,
                         | Some(s) => s.starts_with("Add_") || s.starts_with("Substract_") || s.starts_with("Multiply_") || s.starts_with("Divide_") || s.starts_with("Assign"),
-                        _ => false,
+                        _ => true,
                     }
             })
             .unwrap_or(true)

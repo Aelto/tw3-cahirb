@@ -1,7 +1,9 @@
 #![allow(unused)]
 #![feature(string_from_utf8_lossy_owned)]
 
-use crate::parser::{WithCodeEmitting, WithTableResolving};
+use orx_parallel::{IntoParIter, ParIter};
+
+use crate::parser::{WithCodeEmitting, WithTableResolving, ast::FunctionDefinition};
 
 mod decompiler;
 mod parser;
@@ -44,18 +46,23 @@ fn main() {
 }
 
 fn decompile_bytecode(blob: parser::RsBlob) {
-    'classes: for class in &blob.classes {
-        for function in &class.functions {
-            let parsed = function.parse_bytecode();
+    use decompiler::ast::FunctionDeclaration;
+    use orx_parallel::ParallelizableCollection;
 
+    fn decompile_function_definitions(
+        defs: impl ParIter<Item = FunctionDefinition>,
+    ) -> Vec<FunctionDeclaration> {
+        defs.filter_map(|function: FunctionDefinition| {
+            let parsed = function.parse_bytecode();
             let instructions_iter = decompiler::InstructionsIter::new(&parsed.instructions);
-            let result = decompiler::ast::FunctionDeclaration::decompile(instructions_iter);
+            let result = FunctionDeclaration::decompile(instructions_iter);
 
             match result {
                 Ok(v) => {
                     if v.0.is_finished() {
-                        println!("✔️ Successfully decompiled {}", function.name);
-                        // dbg!(v.1);
+                        // println!("✔️ Successfully decompiled {}", function.name);
+
+                        Some(v.1)
                     } else {
                         println!("❌ Failed to decompile {}", function.name);
 
@@ -64,18 +71,29 @@ fn decompile_bytecode(blob: parser::RsBlob) {
                             v.0.peek().map(|i| i.into_emitted_code())
                         );
 
-                        // dbg!(&v.1);
-                        break 'classes;
+                        None
                     }
                 }
                 Err(e) => {
                     println!("❌ Failed to decompile {}", function.name);
                     println!("  error = {e}");
-                    break 'classes;
+                    None
                 }
             }
-        }
+        })
+        .collect()
     }
+
+    let class_functions =
+        decompile_function_definitions(blob.classes.into_par().flat_map(|c| c.functions));
+    let global_functions = decompile_function_definitions(blob.global_functions.into_par());
+
+    let mut count = 0;
+    for result in class_functions.iter().chain(global_functions.iter()) {
+        count += 1;
+    }
+
+    println!("Decompiled {count} functions");
 }
 
 fn parse_and_emit_instructions(blob: parser::RsBlob) {
