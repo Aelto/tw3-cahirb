@@ -25,8 +25,6 @@ impl WithDecompiling for Switch {
         let (i, expression) = Expression::decompile(i)?;
         let (i, cases) = SwitchCase::decompile_many(i.release_offset_limit())?;
 
-        dbg!(&cases);
-
         Ok((i, Self { expression, cases }))
     }
 }
