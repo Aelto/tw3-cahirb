@@ -110,7 +110,7 @@ impl MemoryAccess {
         i: InstructionsIter<'a>,
     ) -> DecompileNodeResult<'a, Self> {
         let (i, struct_node) = i.expect("StructMember")?;
-        let (i, prefix) = Self::decompile_prefix(i)?;
+        let (i, prefix) = Self::decompile(i)?;
 
         Ok((
             i,
