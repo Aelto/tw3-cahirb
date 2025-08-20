@@ -71,6 +71,8 @@ fn decompile_bytecode(blob: parser::RsBlob) {
                             v.0.peek().map(|i| i.into_emitted_code())
                         );
 
+                        dbg!(&v.1);
+
                         None
                     }
                 }
@@ -87,9 +89,23 @@ fn decompile_bytecode(blob: parser::RsBlob) {
     let class_functions =
         decompile_function_definitions(blob.classes.into_par().flat_map(|c| c.functions));
     let global_functions = decompile_function_definitions(blob.global_functions.into_par());
+    let ext_wrap_functions = decompile_function_definitions(blob.ext_wrap_functions.into_par());
+    let ext_add_functions = decompile_function_definitions(blob.ext_add_functions.into_par());
+    let ext_replace_class_functions =
+        decompile_function_definitions(blob.ext_replace_class_functions.into_par());
+    let ext_replace_global_functions =
+        decompile_function_definitions(blob.ext_replace_global_functions.into_par());
+
+    let all_functions = class_functions
+        .iter()
+        .chain(global_functions.iter())
+        .chain(ext_wrap_functions.iter())
+        .chain(ext_add_functions.iter())
+        .chain(ext_replace_class_functions.iter())
+        .chain(ext_replace_global_functions.iter());
 
     let mut count = 0;
-    for result in class_functions.iter().chain(global_functions.iter()) {
+    for result in all_functions {
         count += 1;
     }
 
@@ -112,6 +128,16 @@ fn parse_and_emit_instructions(blob: parser::RsBlob) {
     }
 
     for func in &blob.ext_replace_class_functions {
+        println!("parsing {}", func.name);
+        parsed_functions.push(func.parse_bytecode());
+    }
+
+    for func in &blob.ext_add_functions {
+        println!("parsing {}", func.name);
+        parsed_functions.push(func.parse_bytecode());
+    }
+
+    for func in &blob.ext_wrap_functions {
         println!("parsing {}", func.name);
         parsed_functions.push(func.parse_bytecode());
     }
