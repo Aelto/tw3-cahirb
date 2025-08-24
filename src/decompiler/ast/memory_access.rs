@@ -73,7 +73,7 @@ impl MemoryAccess {
             i,
             Self::Var {
                 prefix: some_prefix.map(Box::new),
-                var_name: var_name.into_emitted_code(),
+                var_name: var_name.into_emitted_instruction(),
             },
         ))
     }
@@ -84,7 +84,7 @@ impl MemoryAccess {
         Ok((
             i,
             Self::ParamVar {
-                var_name: var_name.into_emitted_code(),
+                var_name: var_name.into_emitted_instruction(),
             },
         ))
     }
@@ -95,7 +95,7 @@ impl MemoryAccess {
         Ok((
             i,
             Self::LocalVar {
-                var_name: var_name.into_emitted_code(),
+                var_name: var_name.into_emitted_instruction(),
             },
         ))
     }
@@ -115,7 +115,7 @@ impl MemoryAccess {
         Ok((
             i,
             Self::StructMember {
-                member_name: struct_node.into_emitted_code(),
+                member_name: struct_node.into_emitted_instruction(),
                 prefix: Box::new(prefix),
             },
         ))
@@ -133,5 +133,34 @@ impl MemoryAccess {
                 index,
             },
         ))
+    }
+}
+
+impl WithCodeEmitting for MemoryAccess {
+    fn emit_code(&self, f: &mut crate::decompiler::CodeEmitter) {
+        match self {
+            MemoryAccess::This => f.append("this"),
+            MemoryAccess::Parent => f.append("parent"),
+            MemoryAccess::Var { prefix, var_name } => {
+                if let Some(prefix) = prefix {
+                    prefix.emit_code(f);
+                    f.append(".");
+                }
+
+                f.append(&var_name);
+            }
+            MemoryAccess::ParamVar { var_name } => f.append(&var_name),
+            MemoryAccess::LocalVar { var_name } => f.append(&var_name),
+            MemoryAccess::StructMember {
+                member_name,
+                prefix,
+            } => {
+                prefix.emit_code(f);
+                f.append(".");
+                f.append(&member_name);
+            }
+            MemoryAccess::ArrayIndexing { prefix, index } => todo!(),
+            MemoryAccess::Global(globals) => globals.emit_code(f),
+        }
     }
 }

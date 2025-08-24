@@ -20,8 +20,8 @@ impl WithParsing for CName {
     }
 }
 
-impl WithCodeEmitting for CName {
-    fn emit_code(&self, f: &mut String) {
+impl WithInstructionEmitting for CName {
+    fn emit_instruction(&self, f: &mut String) {
         use std::fmt::Write;
 
         match self.try_resolve() {

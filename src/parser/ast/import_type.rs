@@ -20,9 +20,9 @@ impl WithParsing for ImportType {
     }
 }
 
-impl WithCodeEmitting for ImportType {
-    fn emit_code(&self, f: &mut String) {
-        self.name.emit_code(f);
+impl WithInstructionEmitting for ImportType {
+    fn emit_instruction(&self, f: &mut String) {
+        self.name.emit_instruction(f);
     }
 }
 
@@ -40,12 +40,12 @@ impl WithTableResolving<ImportType> for ImportTypeRef {
     }
 }
 
-impl WithCodeEmitting for ImportTypeRef {
-    fn emit_code(&self, f: &mut String) {
+impl WithInstructionEmitting for ImportTypeRef {
+    fn emit_instruction(&self, f: &mut String) {
         use std::fmt::Write;
 
         match self.try_resolve() {
-            Some(import_type) => import_type.emit_code(f),
+            Some(import_type) => import_type.emit_instruction(f),
             None => {
                 // don't emit anything on purpose
                 // write!(f, "__unresolved_import_type__").unwrap();

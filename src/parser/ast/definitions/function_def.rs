@@ -77,16 +77,16 @@ impl WithParsing for ParsedFunctionBytecode {
     }
 }
 
-impl WithCodeEmitting for FunctionDefinition {
-    fn emit_code(&self, f: &mut String) {
+impl WithInstructionEmitting for FunctionDefinition {
+    fn emit_instruction(&self, f: &mut String) {
         use std::fmt::Write;
 
         write!(f, "function ").unwrap();
-        self.name.emit_code(f);
+        self.name.emit_instruction(f);
         f.push('\n');
 
         write!(f, " - override_class = ").unwrap();
-        self.override_class.emit_code(f);
+        self.override_class.emit_instruction(f);
         f.push('\n');
 
         write!(f, " - flags = {}", self.flags).unwrap();
@@ -94,21 +94,21 @@ impl WithCodeEmitting for FunctionDefinition {
 
         write!(f, " - return_type = ").unwrap();
         if let Some(rt) = self.return_type.as_ref() {
-            rt.emit_code(f);
+            rt.emit_instruction(f);
         }
         f.push('\n');
 
         writeln!(f, " - parameters:").unwrap();
         for param in &self.parameters {
             f.push_str("   - ");
-            param.emit_code(f);
+            param.emit_instruction(f);
             f.push('\n');
         }
 
         writeln!(f, " - locals:").unwrap();
         for param in &self.locals {
             f.push_str("   - ");
-            param.emit_code(f);
+            param.emit_instruction(f);
             f.push('\n');
         }
     }
@@ -120,16 +120,16 @@ impl FunctionDefinition {
             .expect("function_bytecode_parsing_failure")
             .1;
 
-        self.emit_code(&mut output.definition_description);
+        self.emit_instruction(&mut output.definition_description);
 
         output
     }
 }
 
-impl WithCodeEmitting for ParsedFunctionBytecode {
-    fn emit_code(&self, output: &mut String) {
+impl WithInstructionEmitting for ParsedFunctionBytecode {
+    fn emit_instruction(&self, output: &mut String) {
         for instr in &self.instructions {
-            instr.emit_code(output);
+            instr.emit_instruction(output);
             output.push('\n');
         }
     }

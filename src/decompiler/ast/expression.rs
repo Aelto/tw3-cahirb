@@ -1,4 +1,4 @@
-use crate::{decompiler::prelude::*, parser::WithCodeEmitting};
+use crate::{decompiler::prelude::*, parser::WithInstructionEmitting};
 
 #[derive(Debug)]
 pub enum Expression {
@@ -17,6 +17,11 @@ pub enum Expression {
     TypeConvertedExpression(Box<TypeConversion>),
     Switch(Box<Switch>),
 
+    /// Breakpoint instructions are probably a debug information to allow
+    /// breakpoints on specific lines, in our case we'll use them to know
+    /// when to put a linebreak while emiting code from the AST.
+    Breakpoint,
+
     /// There are sometimes random Jump instructions, until i've figured out why
     /// there is a blank Jump type of [Expression]
     Jump,
@@ -24,7 +29,8 @@ pub enum Expression {
 
 impl WithDecompiling for Expression {
     fn decompile<'a>(i: InstructionsIter<'a>) -> DecompileNodeResult<'a, Self> {
-        Self::decompile_boolean_logic(i)
+        Self::decompile_breakpoint(i)
+            .or_else(|_| Self::decompile_boolean_logic(i))
             .or_else(|_| Self::decompile_null(i))
             .or_else(|_| Self::decompile_function_call(i))
             .or_else(|_| Self::decompile_constructor_call(i))
@@ -43,6 +49,12 @@ impl WithDecompiling for Expression {
 }
 
 impl Expression {
+    fn decompile_breakpoint<'a>(i: InstructionsIter<'a>) -> DecompileNodeResult<'a, Self> {
+        let (i, _) = i.expect("Breakpoint")?;
+
+        Ok((i, Self::Breakpoint))
+    }
+
     fn decompile_memory_access<'a>(i: InstructionsIter<'a>) -> DecompileNodeResult<'a, Self> {
         let (i, memory_access) = MemoryAccess::decompile(i)?;
 

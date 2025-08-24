@@ -43,3 +43,21 @@ impl WithDecompiling for Globals {
         Ok((i, out))
     }
 }
+
+impl WithCodeEmitting for Globals {
+    fn emit_code(&self, f: &mut crate::decompiler::CodeEmitter) {
+        let s = match self {
+            Globals::TheInput => "theInput",
+            Globals::TheTimer => "theTimer",
+            Globals::TheDebug => "theDebug",
+            Globals::TheSound => "theSound",
+            Globals::TheHud => "theHud",
+            Globals::TheCamera => "theCamera",
+            Globals::ThePlayer => "thePlayer",
+            Globals::TheGame => "theGame",
+            Globals::TheTelemetry => "theTelemetry",
+        };
+
+        f.append(s);
+    }
+}

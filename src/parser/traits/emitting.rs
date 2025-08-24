@@ -1,9 +1,9 @@
-pub trait WithCodeEmitting {
-    fn emit_code(&self, f: &mut String);
+pub trait WithInstructionEmitting {
+    fn emit_instruction(&self, f: &mut String);
 
-    fn into_emitted_code(&self) -> String {
+    fn into_emitted_instruction(&self) -> String {
         let mut out = String::new();
-        self.emit_code(&mut out);
+        self.emit_instruction(&mut out);
 
         out
     }

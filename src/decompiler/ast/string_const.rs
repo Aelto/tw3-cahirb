@@ -12,7 +12,7 @@ impl WithDecompiling for StringConst {
         Ok((
             i,
             Self {
-                name: name.into_emitted_code(),
+                name: name.into_emitted_instruction(),
             },
         ))
     }

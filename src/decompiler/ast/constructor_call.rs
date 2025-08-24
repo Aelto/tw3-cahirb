@@ -29,7 +29,7 @@ impl ConstructorCall {
         let Some(called_type) = constructor
             .operands
             .get("type")
-            .map(|op| op.into_emitted_code())
+            .map(|op| op.into_emitted_instruction())
         else {
             return Err("ConstructorCall, no 'type' operand found in instruction".to_owned());
         };
@@ -59,7 +59,7 @@ impl ConstructorCall {
         let Some(called_type) = constructor
             .operands
             .get("type")
-            .map(|op| op.into_emitted_code())
+            .map(|op| op.into_emitted_instruction())
         else {
             return Err("ConstructorCall, no 'type' operand found in instruction".to_owned());
         };

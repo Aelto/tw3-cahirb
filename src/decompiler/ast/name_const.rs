@@ -12,8 +12,14 @@ impl WithDecompiling for NameConst {
         Ok((
             i,
             Self {
-                name: name.into_emitted_code(),
+                name: name.into_emitted_instruction(),
             },
         ))
+    }
+}
+
+impl WithCodeEmitting for NameConst {
+    fn emit_code(&self, f: &mut crate::decompiler::CodeEmitter) {
+        f.append(&self.name);
     }
 }

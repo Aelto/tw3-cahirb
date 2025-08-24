@@ -33,24 +33,24 @@ impl WithTableResolving<ImportProperty> for ImportPropertyRef {
     }
 }
 
-impl WithCodeEmitting for ImportProperty {
-    fn emit_code(&self, f: &mut String) {
+impl WithInstructionEmitting for ImportProperty {
+    fn emit_instruction(&self, f: &mut String) {
         use std::fmt::Write;
 
         write!(f, "ImportProperty(").unwrap();
-        self.name.emit_code(f);
-        self.scope_type.emit_code(f);
-        self.type_ref.emit_code(f);
+        self.name.emit_instruction(f);
+        self.scope_type.emit_instruction(f);
+        self.type_ref.emit_instruction(f);
         write!(f, ")").unwrap();
     }
 }
 
-impl WithCodeEmitting for ImportPropertyRef {
-    fn emit_code(&self, f: &mut String) {
+impl WithInstructionEmitting for ImportPropertyRef {
+    fn emit_instruction(&self, f: &mut String) {
         use std::fmt::Write;
 
         match self.try_resolve() {
-            Some(import_prop) => import_prop.emit_code(f),
+            Some(import_prop) => import_prop.emit_instruction(f),
             None => {
                 write!(f, "__unresolved_import_propery__").unwrap();
             }

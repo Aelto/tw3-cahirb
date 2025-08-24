@@ -26,8 +26,8 @@ pub enum OperandValue {
     },
 }
 
-impl WithCodeEmitting for OperandValue {
-    fn emit_code(&self, f: &mut String) {
+impl WithInstructionEmitting for OperandValue {
+    fn emit_instruction(&self, f: &mut String) {
         use std::fmt::Write;
 
         match self {
@@ -39,17 +39,17 @@ impl WithCodeEmitting for OperandValue {
             OperandValue::Integer16(v) => write!(f, "{v}").unwrap(),
             OperandValue::Integer32(v) => write!(f, "{v}").unwrap(),
             OperandValue::Float(v) => write!(f, "{v}").unwrap(),
-            OperandValue::Name(cname) => cname.emit_code(f),
+            OperandValue::Name(cname) => cname.emit_instruction(f),
             OperandValue::String(s) => f.push_str(s),
-            OperandValue::ImportFunction(fn_ref) => fn_ref.emit_code(f),
-            OperandValue::ImportFunctionInternal(op_ref) => op_ref.emit_code(f),
+            OperandValue::ImportFunction(fn_ref) => fn_ref.emit_instruction(f),
+            OperandValue::ImportFunctionInternal(op_ref) => op_ref.emit_instruction(f),
             OperandValue::ImportFunctionSelf => f.push_str("ImportFunctionSelf"),
-            OperandValue::ImportType(type_ref) => type_ref.emit_code(f),
+            OperandValue::ImportType(type_ref) => type_ref.emit_instruction(f),
             OperandValue::ClassProp { name, type_ref } => {
                 write!(f, "(").unwrap();
-                type_ref.emit_code(f);
+                type_ref.emit_instruction(f);
                 write!(f, ")").unwrap();
-                name.emit_code(f);
+                name.emit_instruction(f);
             }
         }
     }

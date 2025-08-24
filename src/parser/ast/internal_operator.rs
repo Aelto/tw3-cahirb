@@ -11,8 +11,8 @@ impl WithTableResolving<&'static str> for InternalOperatorRef {
     }
 }
 
-impl WithCodeEmitting for InternalOperatorRef {
-    fn emit_code(&self, f: &mut String) {
+impl WithInstructionEmitting for InternalOperatorRef {
+    fn emit_instruction(&self, f: &mut String) {
         use std::fmt::Write;
 
         match self.try_resolve() {

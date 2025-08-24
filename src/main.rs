@@ -3,7 +3,7 @@
 
 use orx_parallel::{IntoParIter, ParIter};
 
-use crate::parser::{WithCodeEmitting, WithTableResolving, ast::FunctionDefinition};
+use crate::parser::{WithInstructionEmitting, WithTableResolving, ast::FunctionDefinition};
 
 mod decompiler;
 mod parser;
@@ -68,7 +68,7 @@ fn decompile_bytecode(blob: parser::RsBlob) {
 
                         println!(
                             "  stopped at {:?}",
-                            v.0.peek().map(|i| i.into_emitted_code())
+                            v.0.peek().map(|i| i.into_emitted_instruction())
                         );
 
                         dbg!(&v.1);
@@ -147,7 +147,7 @@ fn parse_and_emit_instructions(blob: parser::RsBlob) {
         use std::fmt::Write;
 
         writeln!(code, "{}", body.definition_description);
-        body.emit_code(&mut code);
+        body.emit_instruction(&mut code);
         code.push_str("\n\n");
     }
 

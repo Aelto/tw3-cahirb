@@ -17,3 +17,12 @@ impl WithDecompiling for BooleanConst {
         ))
     }
 }
+
+impl WithCodeEmitting for BooleanConst {
+    fn emit_code(&self, f: &mut crate::decompiler::CodeEmitter) {
+        match self.value {
+            true => f.append("true"),
+            false => f.append("false"),
+        }
+    }
+}

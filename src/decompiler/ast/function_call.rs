@@ -58,7 +58,7 @@ impl FunctionCall {
             i.release_offset_limit(),
             Self {
                 prefix,
-                fn_name: fn_name.into_emitted_code(),
+                fn_name: fn_name.into_emitted_instruction(),
                 parameters,
             },
         ))
@@ -75,7 +75,7 @@ impl FunctionCall {
             i.release_offset_limit(),
             Self {
                 prefix,
-                fn_name: fn_name.into_emitted_code(),
+                fn_name: fn_name.into_emitted_instruction(),
                 parameters,
             },
         ))

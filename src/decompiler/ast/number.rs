@@ -66,3 +66,15 @@ impl Number {
         Ok((i, Self::Float(value)))
     }
 }
+
+impl WithCodeEmitting for Number {
+    fn emit_code(&self, f: &mut crate::decompiler::CodeEmitter) {
+        use std::fmt::Write;
+
+        match self {
+            Number::Int(num) => write!(f.buffer(), "{num}"),
+            Number::Float(num) => write!(f.buffer(), "{num}f"),
+        }
+        .unwrap()
+    }
+}

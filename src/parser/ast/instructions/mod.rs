@@ -56,7 +56,7 @@ impl Instruction {
         self.operands
             .get("type")
             .and_then(|op| op.as_import_type())
-            .map(|ty| ty.into_emitted_code())
+            .map(|ty| ty.into_emitted_instruction())
     }
 }
 
@@ -211,8 +211,8 @@ impl WithParsing for Instruction {
     }
 }
 
-impl WithCodeEmitting for Instruction {
-    fn emit_code(&self, f: &mut String) {
+impl WithInstructionEmitting for Instruction {
+    fn emit_instruction(&self, f: &mut String) {
         use std::fmt::Write;
 
         write!(f, "{}", self.mnemo).unwrap();
@@ -220,7 +220,7 @@ impl WithCodeEmitting for Instruction {
         f.push('(');
         for (key, value) in &self.operands {
             write!(f, " {key}=");
-            value.emit_code(f);
+            value.emit_instruction(f);
             f.push(' ');
         }
         f.push(')');

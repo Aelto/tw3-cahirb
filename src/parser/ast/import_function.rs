@@ -20,13 +20,13 @@ impl WithParsing for ImportFunction {
     }
 }
 
-impl WithCodeEmitting for ImportFunction {
-    fn emit_code(&self, f: &mut String) {
+impl WithInstructionEmitting for ImportFunction {
+    fn emit_instruction(&self, f: &mut String) {
         use std::fmt::Write;
 
-        self.scope_type.emit_code(f);
+        self.scope_type.emit_instruction(f);
         f.push_str("::");
-        self.name.emit_code(f);
+        self.name.emit_instruction(f);
     }
 }
 
@@ -36,12 +36,12 @@ impl WithTableResolving<ImportFunction> for ImportFunctionRef {
     }
 }
 
-impl WithCodeEmitting for ImportFunctionRef {
-    fn emit_code(&self, f: &mut String) {
+impl WithInstructionEmitting for ImportFunctionRef {
+    fn emit_instruction(&self, f: &mut String) {
         use std::fmt::Write;
 
         match self.try_resolve() {
-            Some(import_function) => import_function.emit_code(f),
+            Some(import_function) => import_function.emit_instruction(f),
             None => write!(f, "__unresolved_function_ref__").unwrap(),
         }
     }

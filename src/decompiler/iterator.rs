@@ -151,11 +151,13 @@ impl<'a> InstructionsIter<'a> {
         instruction: &'b Instruction,
         operand: &'static str,
     ) -> Result<&'b OperandValue, String> {
+        use crate::parser::WithInstructionEmitting;
+
         match instruction.operands.get(operand) {
             Some(v) => Ok(v),
             None => Err(format!(
                 "tried to get {operand} from {} but found None",
-                instruction.into_emitted_code()
+                instruction.into_emitted_instruction()
             )),
         }
     }
