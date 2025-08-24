@@ -100,3 +100,17 @@ Nop() size=1 offset=126 opcode=0
     EnumToInt( type=EDialogActionIcon ) size=9 offset=33 opcode=99 // <-- 33+9 = 42
       StructMember( property=(SSceneChoice)dialogAction ) size=9 offset=42 opcode=34
     ```
+
+
+# For loops
+ - they're simple If checks with the iteration as the first instructions
+ - at the end there is a Jump with negative offset
+```
+Jump( skip_offset=-198 ) size=3 offset=288 opcode=23
+Jump( skip_offset=-302 ) size=3 offset=291 opcode=23
+```
+
+- **odd stuff to figure out** bigger jump offset than its own offset:
+  ```js
+  Jump( skip_offset=-302 ) size=3 offset=291 opcode=23
+  ```
