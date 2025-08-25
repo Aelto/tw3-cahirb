@@ -104,6 +104,10 @@ impl OperandValue {
     pub fn as_str(&self) -> Option<&str> {
         match self {
             OperandValue::String(v) => Some(&v),
+            OperandValue::Name(v) => v.try_resolve().map(|op| op.as_str()),
+            OperandValue::ClassProp { name, type_ref: _ } => {
+                name.try_resolve().map(|op| op.as_str())
+            }
             _ => None,
         }
     }

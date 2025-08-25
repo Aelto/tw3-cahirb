@@ -69,11 +69,13 @@ impl MemoryAccess {
         let (i, some_prefix) = i.ok(Self::decompile_prefix(i));
         let (i, var_name) = i.expect("ObjectVar")?;
 
+        dbg!(&var_name.operands);
+
         Ok((
             i,
             Self::Var {
                 prefix: some_prefix.map(Box::new),
-                var_name: var_name.into_emitted_instruction(),
+                var_name: dbg!(var_name.to_property_name()),
             },
         ))
     }
@@ -84,7 +86,7 @@ impl MemoryAccess {
         Ok((
             i,
             Self::ParamVar {
-                var_name: var_name.into_emitted_instruction(),
+                var_name: var_name.to_var_name(),
             },
         ))
     }
@@ -95,7 +97,7 @@ impl MemoryAccess {
         Ok((
             i,
             Self::LocalVar {
-                var_name: var_name.into_emitted_instruction(),
+                var_name: var_name.to_var_name(),
             },
         ))
     }
@@ -115,7 +117,7 @@ impl MemoryAccess {
         Ok((
             i,
             Self::StructMember {
-                member_name: struct_node.into_emitted_instruction(),
+                member_name: struct_node.to_property_name(),
                 prefix: Box::new(prefix),
             },
         ))

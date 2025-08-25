@@ -68,6 +68,30 @@ impl Instruction {
             .map(|s| s.to_owned())
             .unwrap_or_default()
     }
+
+    pub fn to_var_name(&self) -> String {
+        self.operands
+            .get("name")
+            .and_then(|op| op.as_str())
+            .map(str::to_owned)
+            .unwrap_or_default()
+    }
+
+    pub fn to_property_name(&self) -> String {
+        self.operands
+            .get("property")
+            .and_then(|op| op.as_str())
+            .map(str::to_owned)
+            .unwrap_or_default()
+    }
+
+    pub fn to_function_name(&self) -> String {
+        self.operands
+            .get("function")
+            .and_then(|op| op.function_operand())
+            .map(str::to_owned)
+            .unwrap_or_default()
+    }
 }
 
 impl WithParsing for Instruction {

@@ -58,7 +58,7 @@ impl FunctionCall {
             i.release_offset_limit(),
             Self {
                 prefix,
-                fn_name: fn_name.into_emitted_instruction(),
+                fn_name: fn_name.to_function_name(),
                 parameters,
             },
         ))
@@ -75,7 +75,7 @@ impl FunctionCall {
             i.release_offset_limit(),
             Self {
                 prefix,
-                fn_name: fn_name.into_emitted_instruction(),
+                fn_name: fn_name.to_function_name(),
                 parameters,
             },
         ))
@@ -424,6 +424,8 @@ impl WithCodeEmitting for FunctionCall {
         }
 
         self.fn_name.as_str().emit_code(f);
+        "(".emit_code(f);
         (&self.parameters, ", ").emit_code(f);
+        ")".emit_code(f);
     }
 }
