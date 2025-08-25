@@ -12,7 +12,7 @@ impl WithDecompiling for NameConst {
         Ok((
             i,
             Self {
-                name: name.into_emitted_instruction(),
+                name: name.to_name(),
             },
         ))
     }

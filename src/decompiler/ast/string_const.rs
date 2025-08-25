@@ -17,3 +17,9 @@ impl WithDecompiling for StringConst {
         ))
     }
 }
+
+impl WithCodeEmitting for StringConst {
+    fn emit_code(&self, f: &mut crate::decompiler::CodeEmitter) {
+        f.append(&self.name);
+    }
+}

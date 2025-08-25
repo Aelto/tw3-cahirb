@@ -105,9 +105,19 @@ fn decompile_bytecode(blob: parser::RsBlob) {
         .chain(ext_replace_global_functions.iter());
 
     let mut count = 0;
+    let mut output = String::new();
     for result in all_functions {
+        use crate::decompiler::WithCodeEmitting;
+
+        let mut emitter = crate::decompiler::CodeEmitter::new();
+        result.emit_code(&mut emitter);
+
+        output.push_str(emitter.to_string());
+
         count += 1;
     }
+
+    std::fs::write("code.ws", &output).unwrap();
 
     println!("Decompiled {count} functions");
 }

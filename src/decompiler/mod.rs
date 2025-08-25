@@ -1,6 +1,7 @@
 pub mod ast;
 
 mod traits;
+pub use traits::WithCodeEmitting;
 pub use traits::WithDecompiling;
 
 mod iterator;

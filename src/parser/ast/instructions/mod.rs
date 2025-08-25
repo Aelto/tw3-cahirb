@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::collections::HashSet;
 
+use crate::decompiler::WithCodeEmitting;
 use crate::parser::prelude::*;
 
 mod description;
@@ -57,6 +58,15 @@ impl Instruction {
             .get("type")
             .and_then(|op| op.as_import_type())
             .map(|ty| ty.into_emitted_instruction())
+    }
+
+    pub fn to_name(&self) -> String {
+        self.operands
+            .get("value")
+            .and_then(|op| op.as_name())
+            .and_then(|n| n.try_resolve())
+            .map(|s| s.to_owned())
+            .unwrap_or_default()
     }
 }
 

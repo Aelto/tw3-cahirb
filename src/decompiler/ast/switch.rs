@@ -79,3 +79,37 @@ impl WithDecompiling for SwitchCaseLabel {
         ))
     }
 }
+
+impl WithCodeEmitting for SwitchCaseLabel {
+    fn emit_code(&self, f: &mut crate::decompiler::CodeEmitter) {
+        (&"case ", &self.expression, &":").emit_code(f);
+    }
+}
+
+impl WithCodeEmitting for SwitchCase {
+    fn emit_code(&self, f: &mut crate::decompiler::CodeEmitter) {
+        for case in &self.label_expressions {
+            case.emit_code(f);
+            f.linebreak();
+        }
+
+        f.add_indent();
+        self.body_expressions.emit_code(f);
+        "break;".emit_code(f);
+        f.linebreak();
+        f.remove_indent();
+    }
+}
+
+impl WithCodeEmitting for Switch {
+    fn emit_code(&self, f: &mut crate::decompiler::CodeEmitter) {
+        (&"switch (", &self.expression, &") {").emit_code(f);
+
+        f.add_indent();
+        f.linebreak();
+        self.cases.emit_code(f);
+        f.remove_indent();
+        f.linebreak();
+        "}".emit_code(f);
+    }
+}

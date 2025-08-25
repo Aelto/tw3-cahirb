@@ -159,7 +159,10 @@ impl WithCodeEmitting for MemoryAccess {
                 f.append(".");
                 f.append(&member_name);
             }
-            MemoryAccess::ArrayIndexing { prefix, index } => todo!(),
+            MemoryAccess::ArrayIndexing { prefix, index } => {
+                prefix.emit_code(f);
+                (&"[", index, &"]").emit_code(f);
+            }
             MemoryAccess::Global(globals) => globals.emit_code(f),
         }
     }

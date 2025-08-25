@@ -18,6 +18,33 @@ impl WithDecompiling for TypeConversion {
     }
 }
 
+impl WithCodeEmitting for TypeConversion {
+    fn emit_code(&self, f: &mut crate::decompiler::CodeEmitter) {
+        match self {
+            TypeConversion::ImplicitCasting {
+                casting,
+                expression,
+            } => {
+                casting.emit_code(f);
+                f.append("(");
+                expression.emit_code(f);
+                f.append(")");
+            }
+            TypeConversion::DynamicCasting {
+                target_type,
+                expression,
+            } => {
+                f.append("(");
+                f.append(&target_type);
+                f.append(")");
+                f.append("(");
+                expression.emit_code(f);
+                f.append(")");
+            }
+        }
+    }
+}
+
 impl TypeConversion {
     fn decompile_implicit_casting<'a>(i: InstructionsIter<'a>) -> DecompileNodeResult<'a, Self> {
         let (i, casting) = ImplicitCastingType::decompile(i)?;
@@ -151,5 +178,39 @@ impl WithDecompiling for ImplicitCastingType {
         };
 
         Ok((i, casting_type))
+    }
+}
+
+impl WithCodeEmitting for ImplicitCastingType {
+    fn emit_code(&self, f: &mut crate::decompiler::CodeEmitter) {
+        match self {
+            ImplicitCastingType::BoolToByte => f.append("(byte)"),
+            ImplicitCastingType::BoolToInt => f.append("(int)"),
+            ImplicitCastingType::BoolToFloat => f.append("(float)"),
+            ImplicitCastingType::BoolToString => f.append("(string)"),
+            ImplicitCastingType::ByteToBool => f.append("(bool)"),
+            ImplicitCastingType::ByteToInt => f.append("(int)"),
+            ImplicitCastingType::ByteToFloat => f.append("(float)"),
+            ImplicitCastingType::ByteToString => f.append("(string)"),
+            ImplicitCastingType::IntToBool => f.append("(bool)"),
+            ImplicitCastingType::IntToByte => f.append("(byte)"),
+            ImplicitCastingType::IntToFloat => f.append("(float)"),
+            ImplicitCastingType::IntToString => f.append("(string)"),
+            ImplicitCastingType::IntToEnum => {}
+            ImplicitCastingType::FloatToBool => f.append("(bool)"),
+            ImplicitCastingType::FloatToByte => f.append("(byte)"),
+            ImplicitCastingType::FloatToInt => f.append("(int)"),
+            ImplicitCastingType::FloatToString => f.append("(string)"),
+            ImplicitCastingType::NameToBool => f.append("(bool)"),
+            ImplicitCastingType::NameToString => f.append("(string)"),
+            ImplicitCastingType::StringToBool => f.append("(bool)"),
+            ImplicitCastingType::StringToByte => f.append("(byte)"),
+            ImplicitCastingType::StringToInt => f.append("(int)"),
+            ImplicitCastingType::StringToFloat => f.append("(float)"),
+            ImplicitCastingType::ObjectToBool => f.append("(bool)"),
+            ImplicitCastingType::ObjectToString => f.append("(string)"),
+            ImplicitCastingType::EnumToString => f.append("(string)"),
+            ImplicitCastingType::EnumToInt => f.append("(int)"),
+        }
     }
 }

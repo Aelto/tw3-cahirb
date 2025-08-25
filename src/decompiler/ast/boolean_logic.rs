@@ -93,3 +93,16 @@ impl BooleanLogic {
         Ok((i, Self::Boolean(boolean)))
     }
 }
+
+impl WithCodeEmitting for BooleanLogic {
+    fn emit_code(&self, f: &mut crate::decompiler::CodeEmitter) {
+        match self {
+            BooleanLogic::Or { left, right } => (left, &"||", right).emit_code(f),
+            BooleanLogic::And { left, right } => (left, &"&&", right).emit_code(f),
+            BooleanLogic::Not(expression) => (&"!(", expression, &")").emit_code(f),
+            BooleanLogic::Comparison(boolean_comparison) => boolean_comparison.emit_code(f),
+            BooleanLogic::ImplicitConversion(type_conversion) => type_conversion.emit_code(f),
+            BooleanLogic::Boolean(boolean_const) => boolean_const.emit_code(f),
+        }
+    }
+}

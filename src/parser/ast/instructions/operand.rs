@@ -108,6 +108,13 @@ impl OperandValue {
         }
     }
 
+    pub fn as_name(&self) -> Option<&CName> {
+        match self {
+            OperandValue::Name(v) => Some(v),
+            _ => None,
+        }
+    }
+
     /// Returns the optional `function` operand's value
     pub fn function_operand(&self) -> Option<&str> {
         match self {

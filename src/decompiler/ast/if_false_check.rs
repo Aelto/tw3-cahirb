@@ -59,3 +59,35 @@ impl WithDecompiling for ElseCheck {
         Ok((i.release_offset_limit(), Self { body: expressions }))
     }
 }
+
+impl WithCodeEmitting for IfFalseCheck {
+    fn emit_code(&self, f: &mut crate::decompiler::CodeEmitter) {
+        (&"if (", &self.condition, &") {").emit_code(f);
+
+        f.add_indent();
+        f.linebreak();
+        self.body.emit_code(f);
+        f.linebreak();
+        f.remove_indent();
+
+        if let Some(else_check) = &self.else_check {
+            else_check.emit_code(f);
+        }
+
+        "}".emit_code(f);
+    }
+}
+
+impl WithCodeEmitting for ElseCheck {
+    fn emit_code(&self, f: &mut crate::decompiler::CodeEmitter) {
+        "else {".emit_code(f);
+
+        f.add_indent();
+        f.linebreak();
+        self.body.emit_code(f);
+        f.linebreak();
+        f.remove_indent();
+
+        "}".emit_code(f);
+    }
+}

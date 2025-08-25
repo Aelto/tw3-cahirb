@@ -39,4 +39,8 @@ impl CodeEmitter {
             self.indent_level -= 1;
         }
     }
+
+    pub fn to_string(&self) -> &str {
+        &self.buffer
+    }
 }

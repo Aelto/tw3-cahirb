@@ -15,3 +15,9 @@ impl WithDecompiling for MemoryAssign {
         Ok((i, Self { left, right }))
     }
 }
+
+impl WithCodeEmitting for MemoryAssign {
+    fn emit_code(&self, f: &mut crate::decompiler::CodeEmitter) {
+        (&self.left, &"=", &self.right).emit_code(f);
+    }
+}

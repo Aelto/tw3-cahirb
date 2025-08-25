@@ -13,3 +13,10 @@ impl WithDecompiling for Delete {
         Ok((i, Self { access }))
     }
 }
+
+impl WithCodeEmitting for Delete {
+    fn emit_code(&self, f: &mut crate::decompiler::CodeEmitter) {
+        f.append("delete ");
+        self.access.emit_code(f);
+    }
+}

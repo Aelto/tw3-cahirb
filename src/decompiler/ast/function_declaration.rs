@@ -12,3 +12,9 @@ impl FunctionDeclaration {
         Ok((i, Self { body_expressions }))
     }
 }
+
+impl WithCodeEmitting for FunctionDeclaration {
+    fn emit_code(&self, f: &mut crate::decompiler::CodeEmitter) {
+        self.body_expressions.emit_code(f);
+    }
+}

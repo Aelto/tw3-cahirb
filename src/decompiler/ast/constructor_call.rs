@@ -67,3 +67,23 @@ impl ConstructorCall {
         Ok((i, Self::ClassStyle { called_type }))
     }
 }
+
+impl WithCodeEmitting for ConstructorCall {
+    fn emit_code(&self, f: &mut crate::decompiler::CodeEmitter) {
+        match self {
+            ConstructorCall::StructStyle {
+                called_type,
+                parameters,
+            } => {
+                called_type.emit_code(f);
+
+                let joined_params = (parameters, ",");
+                (&"(", &joined_params, &")").emit_code(f);
+            }
+            ConstructorCall::ClassStyle { called_type } => {
+                // TODO: hardcoded thePlayer lifetime:
+                (&"new ", &called_type, &" in thePlayer").emit_code(f);
+            }
+        }
+    }
+}

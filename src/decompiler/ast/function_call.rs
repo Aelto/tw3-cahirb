@@ -415,3 +415,15 @@ impl FunctionCall {
         ))
     }
 }
+
+impl WithCodeEmitting for FunctionCall {
+    fn emit_code(&self, f: &mut crate::decompiler::CodeEmitter) {
+        if let Some(prefix) = &self.prefix {
+            prefix.emit_code(f);
+            f.append(".");
+        }
+
+        self.fn_name.as_str().emit_code(f);
+        (&self.parameters, ", ").emit_code(f);
+    }
+}

@@ -77,3 +77,22 @@ impl BooleanComparison {
         ))
     }
 }
+
+impl WithCodeEmitting for ComparisonOperator {
+    fn emit_code(&self, f: &mut crate::decompiler::CodeEmitter) {
+        match self {
+            ComparisonOperator::Greater => f.append(">"),
+            ComparisonOperator::GreaterEqual => f.append(">="),
+            ComparisonOperator::Equal => f.append("=="),
+            ComparisonOperator::NotEqual => f.append("!="),
+            ComparisonOperator::Less => f.append("<"),
+            ComparisonOperator::LessEqual => f.append("<="),
+        }
+    }
+}
+
+impl WithCodeEmitting for BooleanComparison {
+    fn emit_code(&self, f: &mut crate::decompiler::CodeEmitter) {
+        (&self.left, &self.operator, &self.right).emit_code(f);
+    }
+}

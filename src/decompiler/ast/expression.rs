@@ -145,3 +145,26 @@ impl Expression {
         Ok((i, Self::Null))
     }
 }
+
+impl WithCodeEmitting for Expression {
+    fn emit_code(&self, f: &mut crate::decompiler::CodeEmitter) {
+        match self {
+            Expression::MemoryAccess(memory_access) => memory_access.emit_code(f),
+            Expression::FunctionCall(function_call) => function_call.emit_code(f),
+            Expression::ConstructorCall(constructor_call) => constructor_call.emit_code(f),
+            Expression::MemoryAssign(memory_assign) => memory_assign.emit_code(f),
+            Expression::NameConst(name_const) => name_const.emit_code(f),
+            Expression::StringConst(string_const) => string_const.emit_code(f),
+            Expression::Number(number) => number.emit_code(f),
+            Expression::Null => f.append("NULL"),
+            Expression::IfFalseCheck(if_false_check) => if_false_check.emit_code(f),
+            Expression::BooleanLogic(boolean_logic) => boolean_logic.emit_code(f),
+            Expression::Return(ret) => ret.emit_code(f),
+            Expression::Delete(delete) => delete.emit_code(f),
+            Expression::TypeConvertedExpression(type_conversion) => type_conversion.emit_code(f),
+            Expression::Switch(switch) => switch.emit_code(f),
+            Expression::Breakpoint => f.linebreak(),
+            Expression::Jump => {}
+        }
+    }
+}
