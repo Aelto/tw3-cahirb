@@ -107,13 +107,13 @@ fn get_instructions_set<'a>() -> &'a Vec<InstructionDescription> {
     InstructionDescription {
         mnemo: "LocalVar",
         comment: "Access to local variable",
-        operands: vec![("name", "name")],
+        operands: vec![("func_prop", "name")],
         ..Default::default()
     },
     InstructionDescription {
         mnemo: "ParamVar",
         comment: "Access to function parameter variable",
-        operands: vec![("name", "name")],
+        operands: vec![("func_prop", "name")],
         ..Default::default()
     },
     InstructionDescription {

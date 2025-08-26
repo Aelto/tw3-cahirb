@@ -228,6 +228,14 @@ impl WithParsing for Instruction {
                     operands_runtime_size += 8; // sizeof(CProperty*)
                 }
 
+                "func_prop" => {
+                    let (new_i, value) = CName::parse(i)?;
+                    i = new_i;
+
+                    operands.insert(*opr_name, OperandValue::Name(value));
+                    operands_runtime_size += 8; // sizeof(CProperty*)
+                }
+
                 _ => panic!("unhandled operator type {opr_type}"),
             }
         }
