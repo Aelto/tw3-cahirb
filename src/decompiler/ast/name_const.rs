@@ -20,6 +20,8 @@ impl WithDecompiling for NameConst {
 
 impl WithCodeEmitting for NameConst {
     fn emit_code(&self, f: &mut crate::decompiler::CodeEmitter) {
+        f.append("'");
         f.append(&self.name);
+        f.append("'");
     }
 }

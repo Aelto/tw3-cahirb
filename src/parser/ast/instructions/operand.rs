@@ -108,6 +108,14 @@ impl OperandValue {
             OperandValue::ClassProp { name, type_ref: _ } => {
                 name.try_resolve().map(|op| op.as_str())
             }
+            OperandValue::ImportFunction(import_function_ref) => import_function_ref
+                .try_resolve()
+                .and_then(|f| f.name.try_resolve())
+                .map(|s| s.as_str()),
+            OperandValue::ImportFunctionInternal(internal_operator_ref) => {
+                internal_operator_ref.try_resolve().map(|s| *s)
+            }
+
             _ => None,
         }
     }

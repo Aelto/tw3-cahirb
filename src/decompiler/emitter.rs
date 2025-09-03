@@ -21,7 +21,8 @@ impl CodeEmitter {
     }
 
     pub fn linebreak(&mut self) {
-        self.buffer.push('\r');
+        self.buffer.push('\n');
+        self.indent();
     }
 
     pub fn indent(&mut self) {

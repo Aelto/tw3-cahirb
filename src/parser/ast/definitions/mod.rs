@@ -15,3 +15,5 @@ pub use class_def::ClassDefinition;
 
 mod function_def;
 pub use function_def::FunctionDefinition;
+pub use function_def::ParsedFunctionBytecode;
+pub use function_def::ParsedFunctionDefinition;

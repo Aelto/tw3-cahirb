@@ -6,6 +6,12 @@ pub struct CName {
     string_index: u32,
 }
 
+impl CName {
+    pub fn to_string_or_default(&self) -> String {
+        self.try_resolve().map(String::to_owned).unwrap_or_default()
+    }
+}
+
 impl WithTableResolving<String> for CName {
     fn try_resolve<'a>(&self) -> Option<&String> {
         crate::parser::TableManager::try_resolve_string(self.string_index as usize)

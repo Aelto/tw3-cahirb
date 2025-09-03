@@ -96,8 +96,8 @@ impl WithCodeEmitting for SwitchCase {
         f.add_indent();
         self.body_expressions.emit_code(f);
         "break;".emit_code(f);
-        f.linebreak();
         f.remove_indent();
+        f.linebreak();
     }
 }
 

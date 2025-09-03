@@ -18,6 +18,6 @@ impl WithDecompiling for MemoryAssign {
 
 impl WithCodeEmitting for MemoryAssign {
     fn emit_code(&self, f: &mut crate::decompiler::CodeEmitter) {
-        (&self.left, &"=", &self.right).emit_code(f);
+        (&self.left, &" = ", &self.right).emit_code(f);
     }
 }

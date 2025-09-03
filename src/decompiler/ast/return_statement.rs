@@ -25,11 +25,13 @@ impl WithDecompiling for Return {
 
 impl WithCodeEmitting for Return {
     fn emit_code(&self, f: &mut crate::decompiler::CodeEmitter) {
-        f.append("return");
+        f.append("return ");
 
         if let Some(expr) = &self.expression {
             f.append(" ");
             expr.emit_code(f);
+            f.append(";");
+            f.linebreak();
         }
     }
 }

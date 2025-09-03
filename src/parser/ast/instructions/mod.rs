@@ -63,10 +63,13 @@ impl Instruction {
     pub fn to_name(&self) -> String {
         self.operands
             .get("value")
-            .and_then(|op| op.as_name())
-            .and_then(|n| n.try_resolve())
-            .map(|s| s.to_owned())
+            .and_then(|op| op.as_str())
+            .map(str::to_owned)
             .unwrap_or_default()
+    }
+
+    pub fn to_string(&self) -> String {
+        self.to_name()
     }
 
     pub fn to_var_name(&self) -> String {
@@ -88,7 +91,7 @@ impl Instruction {
     pub fn to_function_name(&self) -> String {
         self.operands
             .get("function")
-            .and_then(|op| op.function_operand())
+            .and_then(|op| op.as_str())
             .map(str::to_owned)
             .unwrap_or_default()
     }

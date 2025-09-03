@@ -20,7 +20,7 @@ pub enum Expression {
     /// Breakpoint instructions are probably a debug information to allow
     /// breakpoints on specific lines, in our case we'll use them to know
     /// when to put a linebreak while emiting code from the AST.
-    Breakpoint,
+    Breakpoint(Box<Expression>),
 
     /// There are sometimes random Jump instructions, until i've figured out why
     /// there is a blank Jump type of [Expression]
@@ -50,9 +50,11 @@ impl WithDecompiling for Expression {
 
 impl Expression {
     fn decompile_breakpoint<'a>(i: InstructionsIter<'a>) -> DecompileNodeResult<'a, Self> {
-        let (i, _) = i.expect("Breakpoint")?;
+        // uses the "raw" variant as breakpoints are usually skipped
+        let (i, _) = i.expect_raw("Breakpoint")?;
+        let (i, expr) = Expression::decompile_boxed(i)?;
 
-        Ok((i, Self::Breakpoint))
+        Ok((i, Self::Breakpoint(expr)))
     }
 
     fn decompile_memory_access<'a>(i: InstructionsIter<'a>) -> DecompileNodeResult<'a, Self> {
@@ -163,7 +165,11 @@ impl WithCodeEmitting for Expression {
             Expression::Delete(delete) => delete.emit_code(f),
             Expression::TypeConvertedExpression(type_conversion) => type_conversion.emit_code(f),
             Expression::Switch(switch) => switch.emit_code(f),
-            Expression::Breakpoint => f.linebreak(),
+            Expression::Breakpoint(expr) => {
+                expr.emit_code(f);
+                f.append(";");
+                f.linebreak();
+            }
             Expression::Jump => {}
         }
     }

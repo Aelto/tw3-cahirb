@@ -69,13 +69,11 @@ impl MemoryAccess {
         let (i, some_prefix) = i.ok(Self::decompile_prefix(i));
         let (i, var_name) = i.expect("ObjectVar")?;
 
-        dbg!(&var_name.operands);
-
         Ok((
             i,
             Self::Var {
                 prefix: some_prefix.map(Box::new),
-                var_name: dbg!(var_name.to_property_name()),
+                var_name: var_name.to_property_name(),
             },
         ))
     }

@@ -12,6 +12,16 @@ pub struct PropertyDefinition {
     pub binding: CName,
 }
 
+impl PropertyDefinition {
+    pub fn to_resolved_name(&self) -> String {
+        self.name.to_string_or_default()
+    }
+
+    pub fn to_resolved_typename(&self) -> String {
+        self.type_name.to_string_or_default()
+    }
+}
+
 impl WithParsing for PropertyDefinition {
     fn parse(i: &[u8]) -> nom::IResult<&[u8], Self> {
         let (i, name) = CName::parse(i)?;

@@ -41,8 +41,8 @@ fn main() {
     //     }
     // }
 
-    decompile_bytecode(blob);
-    // parse_and_emit_instructions(blob);
+    // decompile_bytecode(blob);
+    parse_and_emit_instructions(blob);
 }
 
 fn decompile_bytecode(blob: parser::RsBlob) {
@@ -55,7 +55,8 @@ fn decompile_bytecode(blob: parser::RsBlob) {
         defs.filter_map(|function: FunctionDefinition| {
             let parsed = function.parse_bytecode();
             let instructions_iter = decompiler::InstructionsIter::new(&parsed.instructions);
-            let result = FunctionDeclaration::decompile(instructions_iter);
+            let definition = function.parse_definition();
+            let result = FunctionDeclaration::decompile(instructions_iter, definition);
 
             match result {
                 Ok(v) => {
@@ -110,7 +111,9 @@ fn decompile_bytecode(blob: parser::RsBlob) {
         use crate::decompiler::WithCodeEmitting;
 
         let mut emitter = crate::decompiler::CodeEmitter::new();
+        emitter.linebreak();
         result.emit_code(&mut emitter);
+        emitter.linebreak();
 
         output.push_str(emitter.to_string());
 

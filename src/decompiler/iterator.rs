@@ -42,6 +42,22 @@ impl<'a> InstructionsIter<'a> {
         (self, None)
     }
 
+    pub fn next_raw(mut self) -> (Self, Option<&'a Instruction>) {
+        while let Some(instr) = self.inner.first() {
+            self.inner = &self.inner[1..];
+
+            if !self.instruction_is_within_offset_limit(instr) {
+                return (self, None);
+            }
+
+            if instr.mnemo == "Breakpoint" || !Self::instruction_should_be_skipped(instr) {
+                return (self, Some(instr));
+            }
+        }
+
+        (self, None)
+    }
+
     pub fn peek(&self) -> Option<&'a Instruction> {
         for instr in self.inner {
             if !self.instruction_is_within_offset_limit(instr) {
@@ -88,6 +104,19 @@ impl<'a> InstructionsIter<'a> {
 
     pub fn expect(mut self, mnemo: &'static str) -> DecompileResult<'a> {
         match self.next() {
+            (i, Some(instr)) => {
+                if instr.mnemo == mnemo {
+                    Ok((i, instr))
+                } else {
+                    Err(format!("needed {mnemo} but found {}", instr.mnemo))
+                }
+            }
+            _ => Err(format!("needed {mnemo} but found end of iterator")),
+        }
+    }
+
+    pub fn expect_raw(mut self, mnemo: &'static str) -> DecompileResult<'a> {
+        match self.next_raw() {
             (i, Some(instr)) => {
                 if instr.mnemo == mnemo {
                     Ok((i, instr))

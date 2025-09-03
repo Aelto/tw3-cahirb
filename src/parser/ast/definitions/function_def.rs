@@ -1,4 +1,7 @@
-use crate::parser::{ast::bytecode, prelude::*};
+use crate::{
+    decompiler::WithCodeEmitting,
+    parser::{ast::bytecode, prelude::*},
+};
 
 #[derive(Debug)]
 pub struct FunctionDefinition {
@@ -15,6 +18,37 @@ pub struct FunctionDefinition {
 pub struct ParsedFunctionBytecode {
     pub instructions: Vec<Instruction>,
     pub definition_description: String,
+}
+
+#[derive(Debug)]
+pub struct ParsedFunctionDefinition {
+    pub name: String,
+    pub parameters: Vec<TypedString>,
+    pub local_variables: Vec<TypedString>,
+    pub return_type: Option<String>,
+}
+
+#[derive(Debug)]
+pub struct TypedString {
+    pub name: String,
+    pub typename: String,
+}
+
+impl WithCodeEmitting for TypedString {
+    fn emit_code(&self, f: &mut crate::decompiler::CodeEmitter) {
+        f.append(&self.name);
+        f.append(": ");
+        f.append(&self.typename);
+    }
+}
+
+impl From<&PropertyDefinition> for TypedString {
+    fn from(value: &PropertyDefinition) -> Self {
+        Self {
+            name: value.name.to_string_or_default(),
+            typename: value.to_resolved_typename(),
+        }
+    }
 }
 
 impl WithParsing for FunctionDefinition {
@@ -123,6 +157,18 @@ impl FunctionDefinition {
         self.emit_instruction(&mut output.definition_description);
 
         output
+    }
+
+    pub fn parse_definition(&self) -> ParsedFunctionDefinition {
+        ParsedFunctionDefinition {
+            name: self.name.to_string_or_default(),
+            local_variables: self.locals.iter().map(TypedString::from).collect(),
+            parameters: self.parameters.iter().map(TypedString::from).collect(),
+            return_type: self
+                .return_type
+                .as_ref()
+                .map(|prop| prop.to_resolved_typename()),
+        }
     }
 }
 

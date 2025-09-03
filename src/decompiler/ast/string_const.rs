@@ -12,7 +12,7 @@ impl WithDecompiling for StringConst {
         Ok((
             i,
             Self {
-                name: name.into_emitted_instruction(),
+                name: name.to_string(),
             },
         ))
     }
@@ -20,6 +20,8 @@ impl WithDecompiling for StringConst {
 
 impl WithCodeEmitting for StringConst {
     fn emit_code(&self, f: &mut crate::decompiler::CodeEmitter) {
+        f.append("\"");
         f.append(&self.name);
+        f.append("\"");
     }
 }
