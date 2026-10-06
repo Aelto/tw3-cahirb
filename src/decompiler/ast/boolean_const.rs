@@ -12,7 +12,7 @@ impl WithDecompiling for BooleanConst {
         Ok((
             i,
             Self {
-                value: boolean.mnemo == "BoolTrue",
+                value: boolean.mnemo() == "BoolTrue",
             },
         ))
     }

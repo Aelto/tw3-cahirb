@@ -124,6 +124,17 @@ impl RsBlob {
         ))
     }
 
+    pub fn functions_mut(&mut self) -> impl Iterator<Item = &mut FunctionDefinition> {
+        self.classes
+            .iter_mut()
+            .flat_map(|class| class.functions.iter_mut())
+            .chain(self.global_functions.iter_mut())
+            .chain(self.ext_replace_global_functions.iter_mut())
+            .chain(self.ext_replace_class_functions.iter_mut())
+            .chain(self.ext_add_functions.iter_mut())
+            .chain(self.ext_wrap_functions.iter_mut())
+    }
+
     fn write_string_table(&self, w: &mut BlobWriter) {
         let string_table_offset = w.len() as u32;
 

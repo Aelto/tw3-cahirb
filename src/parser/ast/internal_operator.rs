@@ -1,6 +1,6 @@
 use crate::parser::prelude::*;
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct InternalOperatorRef {
     pub table_index: usize,
 }

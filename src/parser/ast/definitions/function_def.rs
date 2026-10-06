@@ -108,16 +108,17 @@ impl WithWriting for FunctionDefinition {
 
 impl WithParsing for ParsedFunctionBytecode {
     fn parse(i: &[u8]) -> nom::IResult<&[u8], Self> {
-        let (mut i, runtime_size) = parse_u32(i)?;
+        let (mut i, _runtime_size) = parse_u32(i)?;
         let mut offset = 0;
 
         let mut instructions = Vec::new();
 
-        while let Ok((new_i, mut instruction)) = Instruction::parse(i) {
+        while !i.is_empty() {
+            let (new_i, op) = Op::parse(i)?;
             i = new_i;
 
-            instruction.offset = offset;
-            offset += instruction.size;
+            let instruction = Instruction::new(op, offset);
+            offset += instruction.size();
             instructions.push(instruction);
         }
 
@@ -128,6 +129,17 @@ impl WithParsing for ParsedFunctionBytecode {
                 definition_description: String::new(),
             },
         ))
+    }
+}
+
+impl WithWriting for ParsedFunctionBytecode {
+    fn write(&self, w: &mut BlobWriter) {
+        let runtime_size: usize = self.instructions.iter().map(Instruction::size).sum();
+
+        w.write_u32(runtime_size as u32);
+        for instruction in &self.instructions {
+            w.write(instruction);
+        }
     }
 }
 

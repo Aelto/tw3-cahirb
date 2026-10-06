@@ -60,14 +60,13 @@ impl WithDecompiling for SwitchCaseLabel {
         let offset_limit = obtain_offset_limit(label);
 
         let Some(label_expr_offset) = label
-            .operands
-            .get("expr_skip_offset")
+            .operand("expr_skip_offset")
             .and_then(|op| op.to_i32())
         else {
             return Err("SwitchLabel, expected operand expr_skip_offset on instruction but did not find any".to_owned());
         };
 
-        let i = i.within_offset_limit_raw(&label, label_expr_offset as usize + label.size);
+        let i = i.within_offset_limit_raw(&label, label_expr_offset as usize + label.size());
         let (i, label_expression) = Expression::decompile(i)?;
 
         Ok((

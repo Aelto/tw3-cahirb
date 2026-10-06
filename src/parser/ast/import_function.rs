@@ -6,7 +6,7 @@ pub struct ImportFunction {
     pub scope_type: ImportTypeRef,
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct ImportFunctionRef {
     pub table_index: u32,
 }

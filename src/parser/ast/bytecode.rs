@@ -22,6 +22,15 @@ impl WithParsing for ByteCodeRef {
     }
 }
 
+impl ByteCodeRef {
+    pub fn new(bytes: Vec<u8>) -> Self {
+        Self {
+            size: bytes.len() as u32,
+            inner: bytes,
+        }
+    }
+}
+
 impl WithWriting for ByteCodeRef {
     fn write(&self, w: &mut BlobWriter) {
         w.write_compressed_u32(self.inner.len() as u32);

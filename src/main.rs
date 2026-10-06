@@ -57,8 +57,20 @@ fn main() {
 fn roundtrip(path: &str) {
     use parser::WithWriting;
 
+    use parser::WithParsing;
+    use parser::ast::{ByteCodeRef, ParsedFunctionBytecode};
+
     let original = std::fs::read(path).expect("failed to read .rsblob bytes");
-    let written = parser::RsBlob::from_bytes(&original).to_bytes();
+
+    let mut blob = parser::RsBlob::from_bytes(&original);
+    for function in blob.functions_mut() {
+        let (_, decoded) = ParsedFunctionBytecode::parse(function.bytecode.as_ref())
+            .expect("function_bytecode_parsing_failure");
+
+        function.bytecode = ByteCodeRef::new(decoded.to_bytes());
+    }
+
+    let written = blob.to_bytes();
 
     let first_difference = original
         .iter()
