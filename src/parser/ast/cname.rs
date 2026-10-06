@@ -26,6 +26,12 @@ impl WithParsing for CName {
     }
 }
 
+impl WithWriting for CName {
+    fn write(&self, w: &mut BlobWriter) {
+        w.write_compressed_u32(self.string_index);
+    }
+}
+
 impl WithInstructionEmitting for CName {
     fn emit_instruction(&self, f: &mut String) {
         use std::fmt::Write;

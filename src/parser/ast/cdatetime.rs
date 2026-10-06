@@ -13,3 +13,10 @@ impl WithParsing for CDateTime {
         Ok((i, Self { date, time }))
     }
 }
+
+impl WithWriting for CDateTime {
+    fn write(&self, w: &mut BlobWriter) {
+        w.write_u32(self.date);
+        w.write_u32(self.time);
+    }
+}

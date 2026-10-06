@@ -86,6 +86,26 @@ impl WithParsing for FunctionDefinition {
     }
 }
 
+impl WithWriting for FunctionDefinition {
+    fn write(&self, w: &mut BlobWriter) {
+        w.write(&self.name);
+        w.write(&self.override_class);
+        w.write_compressed_u32(self.flags);
+
+        match &self.return_type {
+            Some(return_type) => {
+                w.write_u8(1);
+                w.write(return_type);
+            }
+            None => w.write_u8(0),
+        }
+
+        w.write_array(&self.parameters);
+        w.write_array(&self.locals);
+        w.write(&self.bytecode);
+    }
+}
+
 impl WithParsing for ParsedFunctionBytecode {
     fn parse(i: &[u8]) -> nom::IResult<&[u8], Self> {
         let (mut i, runtime_size) = parse_u32(i)?;

@@ -29,3 +29,17 @@ impl WithParsing for Enumerator {
         Ok((i, Self { name, value }))
     }
 }
+
+impl WithWriting for EnumDefinition {
+    fn write(&self, w: &mut BlobWriter) {
+        w.write(&self.name);
+        w.write_array(&self.enumerators);
+    }
+}
+
+impl WithWriting for Enumerator {
+    fn write(&self, w: &mut BlobWriter) {
+        w.write(&self.name);
+        w.write_compressed_i32(self.value);
+    }
+}

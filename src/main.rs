@@ -9,6 +9,15 @@ mod decompiler;
 mod parser;
 
 fn main() {
+    let args: Vec<String> = std::env::args().skip(1).collect();
+
+    if let [command, path] = args.as_slice()
+        && command == "roundtrip"
+    {
+        roundtrip(path);
+        return;
+    }
+
     let blob = {
         let mut blob = parser::RsBlob::from_file("precompiled.rsblob");
         parser::TableManager::init(&mut blob);
@@ -43,6 +52,38 @@ fn main() {
 
     // decompile_bytecode(blob);
     parse_and_emit_instructions(blob);
+}
+
+fn roundtrip(path: &str) {
+    use parser::WithWriting;
+
+    let original = std::fs::read(path).expect("failed to read .rsblob bytes");
+    let written = parser::RsBlob::from_bytes(&original).to_bytes();
+
+    let first_difference = original
+        .iter()
+        .zip(&written)
+        .position(|(a, b)| a != b)
+        .or_else(|| (original.len() != written.len()).then(|| original.len().min(written.len())));
+
+    let Some(offset) = first_difference else {
+        println!("✔️ byte identical ({} bytes)", original.len());
+        return;
+    };
+
+    let window = |bytes: &[u8]| -> Vec<u8> {
+        let start = offset.saturating_sub(16);
+        let end = (offset + 16).min(bytes.len());
+        bytes[start.min(end)..end].to_vec()
+    };
+
+    println!(
+        "❌ first difference at {offset:#x} (original {} bytes, written {} bytes)",
+        original.len(),
+        written.len()
+    );
+    println!("original: {:02x?}", window(&original));
+    println!("written:  {:02x?}", window(&written));
 }
 
 fn decompile_bytecode(blob: parser::RsBlob) {

@@ -20,6 +20,13 @@ impl WithParsing for ImportFunction {
     }
 }
 
+impl WithWriting for ImportFunction {
+    fn write(&self, w: &mut BlobWriter) {
+        w.write(&self.name);
+        w.write(&self.scope_type);
+    }
+}
+
 impl WithInstructionEmitting for ImportFunction {
     fn emit_instruction(&self, f: &mut String) {
         use std::fmt::Write;

@@ -45,6 +45,17 @@ impl WithParsing for PropertyDefinition {
     }
 }
 
+impl WithWriting for PropertyDefinition {
+    fn write(&self, w: &mut BlobWriter) {
+        w.write(&self.name);
+        w.write_string(&self.hint);
+        w.write_compressed_u32(self.flags);
+        w.write(&self.type_name);
+        w.write(&self.class_name);
+        w.write(&self.binding);
+    }
+}
+
 impl WithInstructionEmitting for PropertyDefinition {
     fn emit_instruction(&self, f: &mut String) {
         use std::fmt::Write;

@@ -39,3 +39,16 @@ impl WithParsing for ClassDefinition {
         ))
     }
 }
+
+impl WithWriting for ClassDefinition {
+    fn write(&self, w: &mut BlobWriter) {
+        w.write(&self.name);
+        w.write(&self.parent_name);
+        w.write(&self.machine_name);
+        w.write_u8(self.is_state);
+        w.write_compressed_u32(self.flags);
+        w.write_array(&self.properties);
+        w.write_array(&self.functions);
+        w.write_array(&self.default_values);
+    }
+}
