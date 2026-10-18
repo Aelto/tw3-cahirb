@@ -62,12 +62,14 @@ impl Tables {
             Type::Enum(_) => TypeKind::Enum,
             Type::Struct(_) => TypeKind::Class,
             Type::Class(_) => TypeKind::Handle,
-            Type::Array(_) => TypeKind::Array,
+            Type::Array { .. } => TypeKind::Array,
         };
 
         let name = match ty {
             Type::Class(class) => format!("handle:{}", symbols.blob_name(class)),
-            Type::Array(inner) => format!("array:2,0,{}", import_element_name(inner, symbols)),
+            Type::Array { element, layout } => {
+                layout.type_name(&import_element_name(element, symbols))
+            }
             other => other.rtti_name(),
         };
 
@@ -108,7 +110,9 @@ impl Tables {
 fn import_element_name(ty: &Type, symbols: &Symbols) -> String {
     match ty {
         Type::Class(class) => format!("handle:{}", symbols.blob_name(class)),
-        Type::Array(inner) => format!("array:2,0,{}", import_element_name(inner, symbols)),
+        Type::Array { element, layout } => {
+            layout.type_name(&import_element_name(element, symbols))
+        }
         other => other.rtti_name(),
     }
 }
@@ -116,7 +120,9 @@ fn import_element_name(ty: &Type, symbols: &Symbols) -> String {
 pub fn definition_type_name(ty: &Type, symbols: &Symbols) -> String {
     match ty {
         Type::Class(class) | Type::Struct(class) => symbols.blob_name(class),
-        Type::Array(inner) => format!("array:2,0,{}", definition_type_name(inner, symbols)),
+        Type::Array { element, layout } => {
+            layout.type_name(&definition_type_name(element, symbols))
+        }
         other => other.rtti_name(),
     }
 }

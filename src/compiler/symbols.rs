@@ -19,10 +19,59 @@ pub enum Type {
     Enum(String),
     Struct(String),
     Class(String),
-    Array(Box<Type>),
+    Array {
+        element: Box<Type>,
+        layout: ArrayLayout,
+    },
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct ArrayLayout {
+    pub memory_class: u32,
+    pub memory_pool: u32,
+}
+
+impl Default for ArrayLayout {
+    fn default() -> Self {
+        Self {
+            memory_class: 2,
+            memory_pool: 0,
+        }
+    }
+}
+
+impl ArrayLayout {
+    pub fn type_name(&self, element_name: &str) -> String {
+        format!(
+            "array:{},{},{element_name}",
+            self.memory_class, self.memory_pool
+        )
+    }
+
+    fn parse(rtti_name: &str) -> Option<(Self, &str)> {
+        let mut parts = rtti_name.strip_prefix("array:")?.splitn(3, ',');
+        let memory_class = parts.next()?.parse().ok()?;
+        let memory_pool = parts.next()?.parse().ok()?;
+        let element_name = parts.next()?;
+
+        Some((
+            Self {
+                memory_class,
+                memory_pool,
+            },
+            element_name,
+        ))
+    }
 }
 
 impl Type {
+    pub fn array(element: Type) -> Self {
+        Type::Array {
+            element: Box::new(element),
+            layout: ArrayLayout::default(),
+        }
+    }
+
     pub fn rtti_name(&self) -> String {
         match self {
             Type::Void => "void".to_owned(),
@@ -36,7 +85,7 @@ impl Type {
             Type::Primitive(name) | Type::Enum(name) | Type::Struct(name) | Type::Class(name) => {
                 name.clone()
             }
-            Type::Array(inner) => format!("array:2,0,{}", inner.rtti_name()),
+            Type::Array { element, layout } => layout.type_name(&element.rtti_name()),
         }
     }
 
@@ -323,15 +372,29 @@ impl Symbols {
                     continue;
                 }
                 let ty = self.resolve_rtti(type_name);
-                self.add_field(&native.name, name, ty);
+                self.set_native_field(&native.name, name, ty);
             }
         }
     }
 
+    fn set_native_field(&mut self, class: &str, name: &str, ty: Type) {
+        let declared_field = self
+            .classes
+            .get_mut(class)
+            .and_then(|info| info.fields.get_mut(name));
+
+        match declared_field {
+            Some(field) => field.ty = ty,
+            None => self.add_field(class, name, ty),
+        }
+    }
+
     fn resolve_rtti(&self, name: &str) -> Type {
-        if let Some(inner) = name.strip_prefix("array:") {
-            let element = inner.splitn(3, ',').nth(2).unwrap_or(inner);
-            return Type::Array(Box::new(self.resolve_rtti(element)));
+        if let Some((layout, element_name)) = ArrayLayout::parse(name) {
+            return Type::Array {
+                element: Box::new(self.resolve_rtti(element_name)),
+                layout,
+            };
         }
         if let Some(class) = name.strip_prefix("handle:").or_else(|| name.strip_prefix("ptr:")) {
             return Type::Class(class.to_owned());
@@ -403,7 +466,7 @@ impl Symbols {
     pub fn resolve(&self, ty: &TypeRef) -> Result<Type, String> {
         if ty.name == "array" {
             let inner = ty.args.first().ok_or("array without element type")?;
-            return Ok(Type::Array(Box::new(self.resolve(inner)?)));
+            return Ok(Type::array(self.resolve(inner)?));
         }
 
         Ok(match ty.name.as_str() {

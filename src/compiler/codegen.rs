@@ -49,6 +49,13 @@ enum Receiver<'e> {
     Object(&'e Expr),
 }
 
+fn array_element(array_type: Type) -> R<Type> {
+    match array_type {
+        Type::Array { element, .. } => Ok(*element),
+        other => Err(format!("expected array, got {other:?}")),
+    }
+}
+
 enum Callee<'e> {
     Method(Rc<FunctionInfo>, Receiver<'e>),
     Global(Rc<FunctionInfo>),
@@ -657,18 +664,15 @@ impl<'a> FunctionCompiler<'a> {
                 Callee::Method(info, _) | Callee::Global(info) | Callee::Wrapped(info, _) => {
                     info.return_type.clone()
                 }
-                Callee::Array(method, _, element) => match method {
+                Callee::Array(method, _, array_type) => match method {
                     "Size" | "FindFirst" | "FindLast" => Type::Int,
                     "Contains" | "Remove" => Type::Bool,
-                    "Last" | "PopBack" => element,
+                    "Last" | "PopBack" => array_element(array_type)?,
                     _ => Type::Void,
                 },
                 Callee::Constructor(name) => Type::Struct(name),
             },
-            ExprKind::Index(array, _) => match self.type_of(array)? {
-                Type::Array(element) => *element,
-                other => return Err(format!("indexing non-array {other:?}")),
-            },
+            ExprKind::Index(array, _) => array_element(self.type_of(array)?)?,
             ExprKind::Unary("!", _) => Type::Bool,
             ExprKind::Unary("~", _) => Type::Int,
             ExprKind::Unary(_, operand) => numeric(&self.type_of(operand)?),
@@ -727,7 +731,7 @@ impl<'a> FunctionCompiler<'a> {
                 }
 
                 match self.type_of(object)? {
-                    Type::Array(element) => Ok(Callee::Array(name, object, *element)),
+                    array_type @ Type::Array { .. } => Ok(Callee::Array(name, object, array_type)),
                     Type::Class(class) => {
                         let method = self
                             .symbols
@@ -865,7 +869,7 @@ impl<'a> FunctionCompiler<'a> {
                 ops
             }
             (Type::Enum(_), Type::Enum(_)) => vec![],
-            (Type::Array(_), Type::Array(_)) => vec![],
+            (Type::Array { .. }, Type::Array { .. }) => vec![],
             (Type::Struct(_), Type::Struct(_)) => vec![],
             (Type::Primitive(_), _) | (_, Type::Primitive(_)) => vec![],
             (_, Type::Void) => vec![],
@@ -1175,9 +1179,9 @@ impl<'a> FunctionCompiler<'a> {
                     self.place(end);
                 }
             }
-            Callee::Array(method, array, element) => {
-                let array_type = Type::Array(Box::new(element.clone()));
+            Callee::Array(method, array, array_type) => {
                 let type_ref = self.tables.import_type(&array_type, self.symbols);
+                let element = array_element(array_type)?;
 
                 let by_value = match args.first().and_then(Option::as_ref).map(|arg| &arg.kind) {
                     Some(
