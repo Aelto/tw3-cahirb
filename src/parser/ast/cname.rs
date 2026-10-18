@@ -7,6 +7,14 @@ pub struct CName {
 }
 
 impl CName {
+    pub fn new(string_index: u32) -> Self {
+        Self { string_index }
+    }
+
+    pub fn string_index(&self) -> u32 {
+        self.string_index
+    }
+
     pub fn to_string_or_default(&self) -> String {
         self.try_resolve().map(String::to_owned).unwrap_or_default()
     }

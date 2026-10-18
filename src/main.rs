@@ -5,6 +5,7 @@ use orx_parallel::{IntoParIter, ParIter};
 
 use crate::parser::{WithInstructionEmitting, WithTableResolving, ast::FunctionDefinition};
 
+mod compiler;
 mod decompiler;
 mod parser;
 
@@ -15,6 +16,13 @@ fn main() {
         && command == "roundtrip"
     {
         roundtrip(path);
+        return;
+    }
+
+    if let [command, output, vanilla, rtti_dump, roots @ ..] = args.as_slice()
+        && command == "compile"
+    {
+        compile(output, vanilla, rtti_dump, roots);
         return;
     }
 
@@ -52,6 +60,29 @@ fn main() {
 
     // decompile_bytecode(blob);
     parse_and_emit_instructions(blob);
+}
+
+fn compile(output: &str, vanilla: &str, rtti_dump: &str, roots: &[String]) {
+    use parser::WithWriting;
+    use std::path::{Path, PathBuf};
+
+    let started = std::time::Instant::now();
+    let input = compiler::CompileInput {
+        vanilla_roots: &[PathBuf::from(vanilla)],
+        rtti_dump: Path::new(rtti_dump),
+        script_roots: &roots.iter().map(PathBuf::from).collect::<Vec<_>>(),
+    };
+
+    match compiler::compile(&input) {
+        Ok(blob) => {
+            std::fs::write(output, blob.to_bytes()).expect("failed to write .rsblob");
+            println!("☑️ wrote {output} in {:?}", started.elapsed());
+        }
+        Err(error) => {
+            println!("❌ {error}");
+            std::process::exit(1);
+        }
+    }
 }
 
 fn roundtrip(path: &str) {
