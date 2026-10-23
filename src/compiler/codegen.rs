@@ -902,10 +902,18 @@ impl<'a> FunctionCompiler<'a> {
     }
 
     fn property(&mut self, field: &FieldInfo) -> PropertyRef {
-        PropertyRef {
-            name: self.tables.name(&field.name),
-            scope: self.tables.class_type(&field.owner, self.symbols),
-        }
+        let name = self.tables.name(&field.name);
+        let owner_is_state = self
+            .symbols
+            .classes
+            .get(&field.owner)
+            .is_some_and(|class| class.state_machine.is_some());
+        let scope = match owner_is_state {
+            true => self.tables.import_type_named(&field.owner, TypeKind::Class),
+            false => self.tables.class_type(&field.owner, self.symbols),
+        };
+
+        PropertyRef { name, scope }
     }
 
     fn enum_constant(&mut self, enum_name: &str, value: i32) {
