@@ -1171,15 +1171,33 @@ impl<'a> FunctionCompiler<'a> {
                 let array_type = Type::Array(Box::new(element.clone()));
                 let type_ref = self.tables.import_type(&array_type, self.symbols);
 
+                let by_value = match args.first().and_then(Option::as_ref).map(|arg| &arg.kind) {
+                    Some(
+                        ExprKind::Call(..)
+                        | ExprKind::Name(_)
+                        | ExprKind::This
+                        | ExprKind::Parent
+                        | ExprKind::VirtualParent,
+                    ) => true,
+                    Some(ExprKind::Ident(name)) => {
+                        matches!(self.resolve_ident(name)?, Resolved::Global(..))
+                    }
+                    _ => false,
+                };
+
                 let (op, params): (Op, Vec<Type>) = match method {
                     "Size" => (Op::ArraySize { type_ref }, vec![]),
                     "Clear" => (Op::ArrayClear { type_ref }, vec![]),
                     "PushBack" => (Op::ArrayPushBack { type_ref }, vec![element]),
                     "PopBack" => (Op::ArrayPopBack { type_ref }, vec![]),
                     "Insert" => (Op::ArrayInsert { type_ref }, vec![Type::Int, element]),
+                    "Remove" if by_value => (Op::ArrayRemove { type_ref }, vec![element]),
                     "Remove" => (Op::ArrayRemoveFast { type_ref }, vec![element]),
+                    "Contains" if by_value => (Op::ArrayContains { type_ref }, vec![element]),
                     "Contains" => (Op::ArrayContainsFast { type_ref }, vec![element]),
+                    "FindFirst" if by_value => (Op::ArrayFindFirst { type_ref }, vec![element]),
                     "FindFirst" => (Op::ArrayFindFirstFast { type_ref }, vec![element]),
+                    "FindLast" if by_value => (Op::ArrayFindLast { type_ref }, vec![element]),
                     "FindLast" => (Op::ArrayFindLastFast { type_ref }, vec![element]),
                     "Resize" => (Op::ArrayResize { type_ref }, vec![Type::Int]),
                     "Grow" => (Op::ArrayGrow { type_ref }, vec![Type::Int]),
