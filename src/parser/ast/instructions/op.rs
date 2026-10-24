@@ -175,4 +175,11 @@ instruction_set! {
     107 => GetTimer,
     108 => GetInput,
     109 => GetTelemetry,
+    110 => MapClear { type_ref: ImportTypeRef },
+    111 => MapSize { type_ref: ImportTypeRef },
+    112 => MapContains { type_ref: ImportTypeRef },
+    113 => MapErase { type_ref: ImportTypeRef },
+    114 => MapGetOrAdd { type_ref: ImportTypeRef },
+    115 => MapTryGet { type_ref: ImportTypeRef },
+    116 => MapKey { type_ref: ImportTypeRef },
 }

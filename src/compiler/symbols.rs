@@ -23,6 +23,14 @@ pub enum Type {
         element: Box<Type>,
         layout: ArrayLayout,
     },
+    Map {
+        key: Box<Type>,
+        value: Box<Type>,
+    },
+}
+
+pub fn map_type_name(key_name: &str, value_name: &str) -> String {
+    format!("map:2,0,{key_name},{value_name}")
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -72,6 +80,13 @@ impl Type {
         }
     }
 
+    pub fn map(key: Type, value: Type) -> Self {
+        Type::Map {
+            key: Box::new(key),
+            value: Box::new(value),
+        }
+    }
+
     pub fn rtti_name(&self) -> String {
         match self {
             Type::Void => "void".to_owned(),
@@ -86,6 +101,7 @@ impl Type {
                 name.clone()
             }
             Type::Array { element, layout } => layout.type_name(&element.rtti_name()),
+            Type::Map { key, value } => map_type_name(&key.rtti_name(), &value.rtti_name()),
         }
     }
 
@@ -467,6 +483,12 @@ impl Symbols {
         if ty.name == "array" {
             let inner = ty.args.first().ok_or("array without element type")?;
             return Ok(Type::array(self.resolve(inner)?));
+        }
+        if ty.name == "map" {
+            let [key, value] = ty.args.as_slice() else {
+                return Err("map requires key and value types".to_owned());
+            };
+            return Ok(Type::map(self.resolve(key)?, self.resolve(value)?));
         }
 
         Ok(match ty.name.as_str() {

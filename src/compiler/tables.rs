@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use super::symbols::{Symbols, Type};
+use super::symbols::{Symbols, Type, map_type_name};
 use crate::parser::ast::{CName, ImportFunction, ImportFunctionRef, ImportType, ImportTypeRef};
 
 const NO_IMPORT_TYPE: u32 = u32::MAX;
@@ -24,6 +24,7 @@ pub enum TypeKind {
     Array = 3,
     Handle = 7,
     Fundamental = 11,
+    Map = 12,
 }
 
 impl Tables {
@@ -63,17 +64,10 @@ impl Tables {
             Type::Struct(_) => TypeKind::Class,
             Type::Class(_) => TypeKind::Handle,
             Type::Array { .. } => TypeKind::Array,
+            Type::Map { .. } => TypeKind::Map,
         };
 
-        let name = match ty {
-            Type::Class(class) => format!("handle:{}", symbols.blob_name(class)),
-            Type::Array { element, layout } => {
-                layout.type_name(&import_element_name(element, symbols))
-            }
-            other => other.rtti_name(),
-        };
-
-        self.import_type_named(&name, kind)
+        self.import_type_named(&import_element_name(ty, symbols), kind)
     }
 
     pub fn class_type(&mut self, class: &str, symbols: &Symbols) -> ImportTypeRef {
@@ -113,6 +107,10 @@ fn import_element_name(ty: &Type, symbols: &Symbols) -> String {
         Type::Array { element, layout } => {
             layout.type_name(&import_element_name(element, symbols))
         }
+        Type::Map { key, value } => map_type_name(
+            &import_element_name(key, symbols),
+            &import_element_name(value, symbols),
+        ),
         other => other.rtti_name(),
     }
 }
@@ -123,6 +121,10 @@ pub fn definition_type_name(ty: &Type, symbols: &Symbols) -> String {
         Type::Array { element, layout } => {
             layout.type_name(&definition_type_name(element, symbols))
         }
+        Type::Map { key, value } => map_type_name(
+            &definition_type_name(key, symbols),
+            &definition_type_name(value, symbols),
+        ),
         other => other.rtti_name(),
     }
 }

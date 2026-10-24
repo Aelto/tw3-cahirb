@@ -56,10 +56,25 @@ fn array_element(array_type: Type) -> R<Type> {
     }
 }
 
+fn map_entry(map_type: Type) -> R<(Type, Type)> {
+    match map_type {
+        Type::Map { key, value } => Ok((*key, *value)),
+        other => Err(format!("expected map, got {other:?}")),
+    }
+}
+
+fn indexed_element(container_type: Type) -> R<Type> {
+    match container_type {
+        Type::Map { value, .. } => Ok(*value),
+        other => array_element(other),
+    }
+}
+
 enum Callee<'e> {
     Method(Rc<FunctionInfo>, Receiver<'e>),
     Global(Rc<FunctionInfo>),
     Array(&'e str, &'e Expr, Type),
+    Map(&'e str, &'e Expr, Type),
     Constructor(String),
     Wrapped(Rc<FunctionInfo>, bool),
 }
@@ -670,9 +685,15 @@ impl<'a> FunctionCompiler<'a> {
                     "Last" | "PopBack" => array_element(array_type)?,
                     _ => Type::Void,
                 },
+                Callee::Map(method, _, map_type) => match method {
+                    "Size" => Type::Int,
+                    "Contains" | "Erase" | "TryGet" => Type::Bool,
+                    "Key" => map_entry(map_type)?.0,
+                    _ => Type::Void,
+                },
                 Callee::Constructor(name) => Type::Struct(name),
             },
-            ExprKind::Index(array, _) => array_element(self.type_of(array)?)?,
+            ExprKind::Index(container, _) => indexed_element(self.type_of(container)?)?,
             ExprKind::Unary("!", _) => Type::Bool,
             ExprKind::Unary("~", _) => Type::Int,
             ExprKind::Unary(_, operand) => numeric(&self.type_of(operand)?),
@@ -732,6 +753,7 @@ impl<'a> FunctionCompiler<'a> {
 
                 match self.type_of(object)? {
                     array_type @ Type::Array { .. } => Ok(Callee::Array(name, object, array_type)),
+                    map_type @ Type::Map { .. } => Ok(Callee::Map(name, object, map_type)),
                     Type::Class(class) => {
                         let method = self
                             .symbols
@@ -870,6 +892,7 @@ impl<'a> FunctionCompiler<'a> {
             }
             (Type::Enum(_), Type::Enum(_)) => vec![],
             (Type::Array { .. }, Type::Array { .. }) => vec![],
+            (Type::Map { .. }, Type::Map { .. }) => vec![],
             (Type::Struct(_), Type::Struct(_)) => vec![],
             (Type::Primitive(_), _) | (_, Type::Primitive(_)) => vec![],
             (_, Type::Void) => vec![],
@@ -1002,12 +1025,21 @@ impl<'a> FunctionCompiler<'a> {
             ExprKind::Super => return Err("bare 'super'".to_owned()),
             ExprKind::Member(object, name) => self.member(object, name)?,
             ExprKind::Call(callee, args) => self.call(callee, args, line)?,
-            ExprKind::Index(array, index) => {
-                let array_type = self.type_of(array)?;
-                let type_ref = self.tables.import_type(&array_type, self.symbols);
-                self.emit(Op::ArrayElement { type_ref });
-                self.expr(array)?;
-                self.expr_as(index, &Type::Int)?;
+            ExprKind::Index(container, index) => {
+                let container_type = self.type_of(container)?;
+                let type_ref = self.tables.import_type(&container_type, self.symbols);
+                let index_type = match container_type {
+                    Type::Map { key, .. } => {
+                        self.emit(Op::MapGetOrAdd { type_ref });
+                        *key
+                    }
+                    _ => {
+                        self.emit(Op::ArrayElement { type_ref });
+                        Type::Int
+                    }
+                };
+                self.expr(container)?;
+                self.expr_as(index, &index_type)?;
             }
             ExprKind::Unary(op, operand) => self.unary(op, operand, line)?,
             ExprKind::Binary(op, left, right) => self.binary(op, left, right, line)?,
@@ -1227,6 +1259,31 @@ impl<'a> FunctionCompiler<'a> {
                 self.expr(array)?;
                 for (arg, ty) in args.iter().zip(&params) {
                     let arg = arg.as_ref().ok_or("missing array argument")?;
+                    self.expr_as(arg, ty)?;
+                }
+            }
+            Callee::Map(method, map, map_type) => {
+                let type_ref = self.tables.import_type(&map_type, self.symbols);
+                let (key, value) = map_entry(map_type)?;
+
+                let (op, params): (Op, Vec<Type>) = match method {
+                    "Clear" => (Op::MapClear { type_ref }, vec![]),
+                    "Size" => (Op::MapSize { type_ref }, vec![]),
+                    "Contains" => (Op::MapContains { type_ref }, vec![key]),
+                    "Erase" => (Op::MapErase { type_ref }, vec![key]),
+                    "TryGet" => (Op::MapTryGet { type_ref }, vec![key, value]),
+                    "Key" => (Op::MapKey { type_ref }, vec![Type::Int]),
+                    other => return Err(format!("unknown map method {other}")),
+                };
+
+                if args.len() != params.len() {
+                    return Err(format!("map {method}: wrong argument count"));
+                }
+
+                self.emit(op);
+                self.expr(map)?;
+                for (arg, ty) in args.iter().zip(&params) {
+                    let arg = arg.as_ref().ok_or("missing map argument")?;
                     self.expr_as(arg, ty)?;
                 }
             }
