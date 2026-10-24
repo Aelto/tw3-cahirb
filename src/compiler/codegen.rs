@@ -1223,9 +1223,11 @@ impl<'a> FunctionCompiler<'a> {
                         | ExprKind::Parent
                         | ExprKind::VirtualParent,
                     ) => true,
-                    Some(ExprKind::Ident(name)) => {
-                        matches!(self.resolve_ident(name)?, Resolved::Global(..))
-                    }
+                    Some(ExprKind::Ident(name)) => match self.resolve_ident(name)? {
+                        Resolved::Global(..) => true,
+                        Resolved::Field(field) => field.is_const,
+                        _ => false,
+                    },
                     _ => false,
                 };
 

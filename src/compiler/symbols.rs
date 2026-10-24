@@ -115,6 +115,7 @@ pub struct FieldInfo {
     pub name: String,
     pub ty: Type,
     pub owner: String,
+    pub is_const: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -262,7 +263,7 @@ impl Symbols {
                         for field in &decl.fields {
                             let ty = self.resolve(&field.ty)?;
                             for name in &field.names {
-                                self.add_field(&key, name, ty.clone());
+                                self.add_field(&key, name, ty.clone(), field.specifiers.is_const);
                             }
                         }
                         for method in &decl.methods {
@@ -300,7 +301,7 @@ impl Symbols {
                         };
                         let ty = self.resolve(&field.ty)?;
                         for name in &field.names {
-                            self.add_field(&class, name, ty.clone());
+                            self.add_field(&class, name, ty.clone(), field.specifiers.is_const);
                         }
                     }
                     Item::Enum(_) => {}
@@ -401,7 +402,7 @@ impl Symbols {
 
         match declared_field {
             Some(field) => field.ty = ty,
-            None => self.add_field(class, name, ty),
+            None => self.add_field(class, name, ty, false),
         }
     }
 
@@ -427,7 +428,7 @@ impl Symbols {
         }
     }
 
-    fn add_field(&mut self, class: &str, name: &str, ty: Type) {
+    fn add_field(&mut self, class: &str, name: &str, ty: Type, is_const: bool) {
         let Some(info) = self.classes.get_mut(class) else {
             return;
         };
@@ -441,6 +442,7 @@ impl Symbols {
                 name: name.to_owned(),
                 ty,
                 owner: class.to_owned(),
+                is_const,
             },
         );
     }
