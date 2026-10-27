@@ -22,6 +22,10 @@ impl<'a> InstructionsIter<'a> {
         self.peek().map(|i| i.offset)
     }
 
+    pub fn offset_raw(&self) -> Option<usize> {
+        self.inner.first().map(|i| i.offset)
+    }
+
     pub fn offset_limit(&self) -> usize {
         self.offset_limit
     }
@@ -50,7 +54,10 @@ impl<'a> InstructionsIter<'a> {
                 return (self, None);
             }
 
-            if instr.mnemo == "Breakpoint" || !Self::instruction_should_be_skipped(instr) {
+            if instr.mnemo == "Breakpoint"
+                || instr.mnemo == "Context"
+                || !Self::instruction_should_be_skipped(instr)
+            {
                 return (self, Some(instr));
             }
         }
@@ -191,8 +198,12 @@ impl<'a> InstructionsIter<'a> {
         }
     }
 
-    pub fn within_offset_limit(mut self, instruction: &Instruction) -> Self {
-        self.offset_limit = obtain_offset_limit(instruction).max(0) as usize;
+    pub fn within_offset_limit(
+        mut self,
+        instruction: &Instruction,
+        additional_offset: i64,
+    ) -> Self {
+        self.offset_limit = (obtain_offset_limit(instruction) + additional_offset).max(0) as usize;
         self
     }
 
@@ -354,7 +365,7 @@ fn test_iterator_within_limit() {
         let limit = obtain_offset_limit(&a);
         assert_eq!(limit, 3);
 
-        let (iter, a) = iter.within_offset_limit(a).maybe("This");
+        let (iter, a) = iter.within_offset_limit(a, 0).maybe("This");
         // confirm that the iterator stopped before even reaching the Parent
         // that is after the offset limit
         let (iter, b) = iter.maybe("Parent");

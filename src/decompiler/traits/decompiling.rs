@@ -1,4 +1,4 @@
-use crate::decompiler::{DecompileNodeResult, InstructionsIter};
+use crate::decompiler::{DecompileNodeResult, InstructionsIter, iterator::obtain_offset_limit};
 
 pub trait WithDecompiling: Sized + std::fmt::Debug {
     fn decompile<'a>(i: InstructionsIter<'a>) -> DecompileNodeResult<'a, Self>;
@@ -7,8 +7,22 @@ pub trait WithDecompiling: Sized + std::fmt::Debug {
         let mut output = Vec::new();
         let limit = i.offset_limit();
         while let Ok((new_i, item)) = Self::decompile(i) {
+            if limit > 0
+                && let Some(new_offset) = new_i.offset()
+            {
+                if new_offset > limit {
+                    break;
+                }
+            }
+
             output.push(item);
             i = new_i.within_offset_limit_absolute(limit);
+
+            if let Some(offset) = i.offset_raw() {
+                if offset > limit {
+                    break;
+                }
+            }
         }
 
         Ok((i, output))

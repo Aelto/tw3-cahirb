@@ -41,8 +41,8 @@ fn main() {
     //     }
     // }
 
-    // decompile_bytecode(blob);
-    parse_and_emit_instructions(blob);
+    decompile_bytecode(blob);
+    // parse_and_emit_instructions(blob);
 }
 
 fn decompile_bytecode(blob: parser::RsBlob) {
@@ -56,6 +56,11 @@ fn decompile_bytecode(blob: parser::RsBlob) {
             let parsed = function.parse_bytecode();
             let instructions_iter = decompiler::InstructionsIter::new(&parsed.instructions);
             let definition = function.parse_definition();
+
+            if definition.name != "trySpawnNpc" {
+                return None;
+            }
+
             let result = FunctionDeclaration::decompile(instructions_iter, definition);
 
             match result {
@@ -120,7 +125,7 @@ fn decompile_bytecode(blob: parser::RsBlob) {
         count += 1;
     }
 
-    std::fs::write("code.ws", &output).unwrap();
+    // std::fs::write("code.ws", &output).unwrap();
 
     println!("Decompiled {count} functions");
 }

@@ -70,6 +70,7 @@ impl BooleanLogic {
         }
 
         let ((i, expr)) = Expression::decompile_boxed(i)?;
+        dbg!(&expr);
         let ((i, _)) = i.expect("ParamEnd")?;
 
         Ok((i, Self::Not(expr)))

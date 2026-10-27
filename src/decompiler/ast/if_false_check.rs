@@ -17,7 +17,9 @@ impl WithDecompiling for IfFalseCheck {
         let (i, if_check) = i.expect("JumpIfFalse")?;
         let (i, condition) = Expression::decompile_boxed(i)?;
 
-        let mut i = i.within_offset_limit(if_check);
+        dbg!(&condition);
+
+        let mut i = i.within_offset_limit(if_check, -1);
         let mut body = Vec::new();
         let mut some_else_check = None;
         loop {
@@ -32,11 +34,17 @@ impl WithDecompiling for IfFalseCheck {
                 break;
             }
 
-            let Ok((new_i, expression)) = Expression::decompile(i) else {
+            let expr = Expression::decompile(i);
+            if let Err(e) = &expr {
+                println!("{}", e);
+            }
+            let Ok((new_i, expression)) = expr else {
                 break;
             };
 
-            i = new_i.within_offset_limit(if_check);
+            // dbg!(&expression);
+
+            i = new_i.within_offset_limit(if_check, -1);
             body.push(expression);
         }
 
@@ -54,7 +62,7 @@ impl WithDecompiling for IfFalseCheck {
 impl WithDecompiling for ElseCheck {
     fn decompile<'a>(i: InstructionsIter<'a>) -> DecompileNodeResult<'a, Self> {
         let (i, jump) = i.expect("Jump")?;
-        let (i, expressions) = Expression::decompile_many(i.within_offset_limit(jump))?;
+        let (i, expressions) = Expression::decompile_many(i.within_offset_limit(jump, 0))?;
 
         Ok((i.release_offset_limit(), Self { body: expressions }))
     }

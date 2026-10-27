@@ -22,6 +22,19 @@ pub enum Expression {
     /// when to put a linebreak while emiting code from the AST.
     Breakpoint(Box<Expression>),
 
+    /// Context instructions are used to wrap series of instructions,
+    /// whether they're MemoryAccess, FunctionCall or any Expression,
+    /// so they can be treated as a single expression even if they're
+    /// componsed of multiple instructions. For example:
+    /// ```js
+    /// thePlayer.GetInventory().AddMoney(10);
+    /// ```
+    /// is a `MemoryAccess`, a `FunctionCall('GetInventory')`, another for `AddMoney` with an `Number` for the 10 parameter. But there will
+    /// be at least 2 `Context` instructions, one of `thePlayer` and another
+    /// for `GetInventory()` as it returns a `CInventoryComponent` that's
+    /// accessed by `AddMoney()`
+    Context(Context),
+
     /// There are sometimes random Jump instructions, until i've figured out why
     /// there is a blank Jump type of [Expression]
     Jump,
@@ -32,6 +45,7 @@ impl WithDecompiling for Expression {
         Self::decompile_breakpoint(i)
             .or_else(|_| Self::decompile_boolean_logic(i))
             .or_else(|_| Self::decompile_null(i))
+            .or_else(|_| Self::decompile_context(i))
             .or_else(|_| Self::decompile_function_call(i))
             .or_else(|_| Self::decompile_constructor_call(i))
             .or_else(|_| Self::decompile_return(i))
@@ -61,6 +75,12 @@ impl Expression {
         let (i, memory_access) = MemoryAccess::decompile(i)?;
 
         Ok((i, Self::MemoryAccess(memory_access)))
+    }
+
+    fn decompile_context<'a>(i: InstructionsIter<'a>) -> DecompileNodeResult<'a, Self> {
+        let (i, context) = Context::decompile(i)?;
+
+        Ok((i, Self::Context(context)))
     }
 
     fn decompile_function_call<'a>(i: InstructionsIter<'a>) -> DecompileNodeResult<'a, Self> {
@@ -170,6 +190,7 @@ impl WithCodeEmitting for Expression {
                 f.append(";");
                 f.linebreak();
             }
+            Expression::Context(context) => context.emit_code(f),
             Expression::Jump => {}
         }
     }

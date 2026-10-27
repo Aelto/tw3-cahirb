@@ -46,7 +46,7 @@ impl FunctionCall {
         let (i, prefix) = MemoryAccess::decompile_maybe(i);
         let (i, fn_name) = i.expect_any(&["VirtualFunc", "FinalFunc"])?;
 
-        let (i, parameters) = Expression::decompile_many(i.within_offset_limit(fn_name))?;
+        let (i, parameters) = Expression::decompile_many(i.within_offset_limit(fn_name, 0))?;
         let mut i = i;
 
         // if fn_name.is_function_with_param_end() {
@@ -68,7 +68,7 @@ impl FunctionCall {
         let (i, prefix) = MemoryAccess::decompile_maybe(i);
         let (i, fn_name) = i.expect("EntryFunc")?;
 
-        let (i, parameters) = Expression::decompile_many(i.within_offset_limit(fn_name))?;
+        let (i, parameters) = Expression::decompile_many(i.within_offset_limit(fn_name, 0))?;
         let (i, _) = i.expect("ParamEnd")?;
 
         Ok((
