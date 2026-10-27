@@ -21,14 +21,12 @@ impl ConstructorCall {
     fn decompile_struct_style<'a>(i: InstructionsIter<'a>) -> DecompileNodeResult<'a, Self> {
         let (mut i, constructor) = i.expect("Constructor")?;
         let params_count = constructor
-            .operands
-            .get("num_params")
+            .operand("num_params")
             .and_then(|op| op.to_i32())
             .unwrap_or(0);
 
         let Some(called_type) = constructor
-            .operands
-            .get("type")
+            .operand("type_ref")
             .map(|op| op.into_emitted_instruction())
         else {
             return Err("ConstructorCall, no 'type' operand found in instruction".to_owned());
@@ -57,8 +55,7 @@ impl ConstructorCall {
         let (mut i, constructor) = i.expect("New")?;
 
         let Some(called_type) = constructor
-            .operands
-            .get("type")
+            .operand("type_ref")
             .map(|op| op.into_emitted_instruction())
         else {
             return Err("ConstructorCall, no 'type' operand found in instruction".to_owned());

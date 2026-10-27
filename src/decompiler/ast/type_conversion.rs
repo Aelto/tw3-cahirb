@@ -141,7 +141,7 @@ impl WithDecompiling for ImplicitCastingType {
             "EnumToInt",
         ])?;
 
-        let casting_type = match casting.mnemo {
+        let casting_type = match casting.mnemo() {
             "BoolToByte" => Self::BoolToByte,
             "BoolToInt" => Self::BoolToInt,
             "BoolToFloat" => Self::BoolToFloat,
@@ -172,7 +172,7 @@ impl WithDecompiling for ImplicitCastingType {
             _ => {
                 return Err(format!(
                     "ImplicitCastingType, unknown casting type {}",
-                    casting.mnemo
+                    casting.mnemo()
                 ));
             }
         };

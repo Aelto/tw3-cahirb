@@ -1,7 +1,11 @@
 mod rsblob;
 pub use rsblob::RsBlob;
 
+mod writer;
+pub use writer::BlobWriter;
+
 mod tables;
+pub use tables::INTERNAL_OPERATORS;
 pub use tables::TableManager;
 pub use tables::WithTableResolving;
 

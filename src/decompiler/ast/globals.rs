@@ -27,7 +27,7 @@ impl WithDecompiling for Globals {
             "GetTelemetry",
         ])?;
 
-        let out = match instr.mnemo {
+        let out = match instr.mnemo() {
             "GetGame" => Self::TheGame,
             "GetPlayer" => Self::ThePlayer,
             "GetCamera" => Self::TheCamera,

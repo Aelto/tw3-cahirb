@@ -4,10 +4,27 @@ use orx_parallel::{IntoParIter, ParIter};
 
 use crate::parser::{WithInstructionEmitting, WithTableResolving, ast::FunctionDefinition};
 
+mod compiler;
 mod decompiler;
 mod parser;
 
 fn main() {
+    let args: Vec<String> = std::env::args().skip(1).collect();
+
+    if let [command, path] = args.as_slice()
+        && command == "roundtrip"
+    {
+        roundtrip(path);
+        return;
+    }
+
+    if let [command, output, vanilla, rtti_dump, roots @ ..] = args.as_slice()
+        && command == "compile"
+    {
+        compile(output, vanilla, rtti_dump, roots);
+        return;
+    }
+
     let blob = {
         let mut blob = parser::RsBlob::from_file("precompiled.rsblob");
         parser::TableManager::init(&mut blob);
@@ -42,6 +59,73 @@ fn main() {
 
     // decompile_bytecode(blob);
     parse_and_emit_instructions(blob);
+}
+
+fn compile(output: &str, vanilla: &str, rtti_dump: &str, roots: &[String]) {
+    use parser::WithWriting;
+    use std::path::{Path, PathBuf};
+
+    let started = std::time::Instant::now();
+    let input = compiler::CompileInput {
+        vanilla_roots: &[PathBuf::from(vanilla)],
+        rtti_dump: Path::new(rtti_dump),
+        script_roots: &roots.iter().map(PathBuf::from).collect::<Vec<_>>(),
+    };
+
+    match compiler::compile(&input) {
+        Ok(blob) => {
+            std::fs::write(output, blob.to_bytes()).expect("failed to write .rsblob");
+            println!("☑️ wrote {output} in {:?}", started.elapsed());
+        }
+        Err(error) => {
+            println!("❌ {error}");
+            std::process::exit(1);
+        }
+    }
+}
+
+fn roundtrip(path: &str) {
+    use parser::WithWriting;
+
+    use parser::WithParsing;
+    use parser::ast::{ByteCodeRef, ParsedFunctionBytecode};
+
+    let original = std::fs::read(path).expect("failed to read .rsblob bytes");
+
+    let mut blob = parser::RsBlob::from_bytes(&original);
+    for function in blob.functions_mut() {
+        let (_, decoded) = ParsedFunctionBytecode::parse(function.bytecode.as_ref())
+            .expect("function_bytecode_parsing_failure");
+
+        function.bytecode = ByteCodeRef::new(decoded.to_bytes());
+    }
+
+    let written = blob.to_bytes();
+
+    let first_difference = original
+        .iter()
+        .zip(&written)
+        .position(|(a, b)| a != b)
+        .or_else(|| (original.len() != written.len()).then(|| original.len().min(written.len())));
+
+    let Some(offset) = first_difference else {
+        println!("✔️ byte identical ({} bytes)", original.len());
+        return;
+    };
+
+    let window = |bytes: &[u8]| -> Vec<u8> {
+        let start = offset.saturating_sub(16);
+        let end = (offset + 16).min(bytes.len());
+        bytes[start.min(end)..end].to_vec()
+    };
+
+    println!(
+        "❌ first difference at {offset:#x} (original {} bytes, written {} bytes)",
+        original.len(),
+        written.len()
+    );
+    println!("original: {:02x?}", window(&original));
+    println!("written:  {:02x?}", window(&written));
 }
 
 fn decompile_bytecode(blob: parser::RsBlob) {

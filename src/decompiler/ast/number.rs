@@ -34,7 +34,7 @@ impl Number {
         let (i, instr) = i.expect("IntConst")?;
         let value = i.operand(instr, "value")?;
 
-        let value: i32 = i32::try_from(value)?;
+        let value: i32 = i32::try_from(&value)?;
 
         Ok((i, Self::Int(value)))
     }
@@ -43,7 +43,7 @@ impl Number {
         let (i, instr) = i.expect("ShortConst")?;
         let value = i.operand(instr, "value")?;
 
-        let value: i32 = i32::try_from(value)?;
+        let value: i32 = i32::try_from(&value)?;
 
         Ok((i, Self::Int(value)))
     }
@@ -52,7 +52,7 @@ impl Number {
         let (i, instr) = i.expect("ByteConst")?;
         let value = i.operand(instr, "value")?;
 
-        let value: i32 = i32::try_from(value)?;
+        let value: i32 = i32::try_from(&value)?;
 
         Ok((i, Self::Int(value)))
     }
@@ -61,7 +61,7 @@ impl Number {
         let (i, instr) = i.expect("FloatConst")?;
         let value = i.operand(instr, "value")?;
 
-        let value: f32 = f32::try_from(value)?;
+        let value: f32 = f32::try_from(&value)?;
 
         Ok((i, Self::Float(value)))
     }

@@ -31,12 +31,42 @@ pub struct RsBlob {
     pub import_function_table: Vec<ImportFunction>,
 }
 
+impl WithWriting for RsBlob {
+    fn write(&self, w: &mut BlobWriter) {
+        w.write_u32(self.format_version);
+        w.write_string(&self.build_platform);
+        w.write_string(&self.build_version);
+        w.write(&self.timestamp);
+        w.write_string(&self.build_config);
+
+        w.write_array(&self.enums);
+        w.write_array(&self.structs);
+        w.write_array(&self.classes);
+        w.write_array(&self.global_functions);
+
+        w.write_array(&self.ext_replace_global_functions);
+        w.write_array(&self.ext_replace_class_functions);
+        w.write_array(&self.ext_add_functions);
+        w.write_array(&self.ext_wrap_functions);
+        w.write_array(&self.ext_add_properties);
+
+        w.write_array(&self.import_type_table);
+        w.write_array(&self.import_property_table);
+        w.write_array(&self.import_function_table);
+
+        self.write_string_table(w);
+    }
+}
+
 impl RsBlob {
     pub fn from_file(path: &str) -> Self {
         let data: Vec<u8> = std::fs::read(path).expect("failed to read .rsblob bytes");
-        let i = data.as_bytes();
 
-        Self::parse(&i).map_err(|_| ()).expect("Failed to parse").1
+        Self::from_bytes(&data)
+    }
+
+    pub fn from_bytes(data: &[u8]) -> Self {
+        Self::parse(data).map_err(|_| ()).expect("Failed to parse").1
     }
 
     fn parse(i: &[u8]) -> IResult<&[u8], Self> {
@@ -92,6 +122,28 @@ impl RsBlob {
                 import_function_table,
             },
         ))
+    }
+
+    pub fn functions_mut(&mut self) -> impl Iterator<Item = &mut FunctionDefinition> {
+        self.classes
+            .iter_mut()
+            .flat_map(|class| class.functions.iter_mut())
+            .chain(self.global_functions.iter_mut())
+            .chain(self.ext_replace_global_functions.iter_mut())
+            .chain(self.ext_replace_class_functions.iter_mut())
+            .chain(self.ext_add_functions.iter_mut())
+            .chain(self.ext_wrap_functions.iter_mut())
+    }
+
+    fn write_string_table(&self, w: &mut BlobWriter) {
+        let string_table_offset = w.len() as u32;
+
+        w.write_u32(self.string_table.len() as u32);
+        for string in &self.string_table {
+            w.write_string(string);
+        }
+
+        w.write_u32(string_table_offset);
     }
 
     fn parse_string_table<'a>(whole: &'a [u8], i: &'a [u8]) -> IResult<&'a [u8], Vec<String>> {

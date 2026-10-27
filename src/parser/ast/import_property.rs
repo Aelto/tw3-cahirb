@@ -27,6 +27,14 @@ impl WithParsing for ImportProperty {
     }
 }
 
+impl WithWriting for ImportProperty {
+    fn write(&self, w: &mut BlobWriter) {
+        w.write(&self.name);
+        w.write(&self.type_ref);
+        w.write(&self.scope_type);
+    }
+}
+
 impl WithTableResolving<ImportProperty> for ImportPropertyRef {
     fn try_resolve<'a>(&self) -> Option<&ImportProperty> {
         crate::parser::TableManager::try_resolve_import_property(self.table_index as usize)

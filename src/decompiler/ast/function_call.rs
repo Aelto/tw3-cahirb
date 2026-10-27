@@ -15,7 +15,7 @@ impl WithDecompiling for FunctionCall {
                 // perform a prefix check to avoid doing any of the array function
                 // calls if the next instruction doesn't start with an "Array"
                 // mnemo.
-                match i.peek().map(|instr| instr.mnemo.starts_with("Array")) {
+                match i.peek().map(|instr| instr.mnemo().starts_with("Array")) {
                     Some(true) => Self::decompile_array_size_call(i)
                         .or_else(|_| Self::decompile_array_push_back(i))
                         .or_else(|_| Self::decompile_array_clear_call(i))

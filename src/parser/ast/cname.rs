@@ -7,6 +7,14 @@ pub struct CName {
 }
 
 impl CName {
+    pub fn new(string_index: u32) -> Self {
+        Self { string_index }
+    }
+
+    pub fn string_index(&self) -> u32 {
+        self.string_index
+    }
+
     pub fn to_string_or_default(&self) -> String {
         self.try_resolve().map(String::to_owned).unwrap_or_default()
     }
@@ -23,6 +31,12 @@ impl WithParsing for CName {
         let (i, string_index) = parse_compressed_u32(i)?;
 
         Ok((i, Self { string_index }))
+    }
+}
+
+impl WithWriting for CName {
+    fn write(&self, w: &mut BlobWriter) {
+        w.write_compressed_u32(self.string_index);
     }
 }
 

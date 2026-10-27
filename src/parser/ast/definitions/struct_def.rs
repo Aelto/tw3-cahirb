@@ -26,3 +26,12 @@ impl WithParsing for StructDefinition {
         ))
     }
 }
+
+impl WithWriting for StructDefinition {
+    fn write(&self, w: &mut BlobWriter) {
+        w.write(&self.name);
+        w.write_compressed_u32(self.flags);
+        w.write_array(&self.properties);
+        w.write_array(&self.default_values);
+    }
+}

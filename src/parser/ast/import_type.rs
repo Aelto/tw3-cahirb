@@ -20,6 +20,19 @@ impl WithParsing for ImportType {
     }
 }
 
+impl WithWriting for ImportType {
+    fn write(&self, w: &mut BlobWriter) {
+        w.write(&self.name);
+        w.write_compressed_u32(self.kind);
+    }
+}
+
+impl WithWriting for ImportTypeRef {
+    fn write(&self, w: &mut BlobWriter) {
+        w.write_compressed_u32(self.index);
+    }
+}
+
 impl WithInstructionEmitting for ImportType {
     fn emit_instruction(&self, f: &mut String) {
         self.name.emit_instruction(f);

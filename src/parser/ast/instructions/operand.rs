@@ -1,7 +1,5 @@
 use crate::parser::prelude::*;
 
-pub type OperandBinding = (&'static str, &'static str);
-
 #[derive(Debug)]
 pub enum OperandValue {
     Bool(bool),

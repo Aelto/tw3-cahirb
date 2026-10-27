@@ -1,10 +1,12 @@
 mod enum_def;
 pub use enum_def::EnumDefinition;
+pub use enum_def::Enumerator;
 
 mod struct_def;
 pub use struct_def::StructDefinition;
 
 mod default_value_def;
+pub use default_value_def::DefaultValue;
 pub use default_value_def::DefaultValueDefinition;
 
 mod property_def;

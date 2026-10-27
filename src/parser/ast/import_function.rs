@@ -6,7 +6,7 @@ pub struct ImportFunction {
     pub scope_type: ImportTypeRef,
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct ImportFunctionRef {
     pub table_index: u32,
 }
@@ -17,6 +17,13 @@ impl WithParsing for ImportFunction {
         let (i, scope_type) = ImportTypeRef::parse(i)?;
 
         Ok((i, Self { name, scope_type }))
+    }
+}
+
+impl WithWriting for ImportFunction {
+    fn write(&self, w: &mut BlobWriter) {
+        w.write(&self.name);
+        w.write(&self.scope_type);
     }
 }
 

@@ -38,3 +38,18 @@ impl WithParsing for DefaultValue {
         ))
     }
 }
+
+impl WithWriting for DefaultValueDefinition {
+    fn write(&self, w: &mut BlobWriter) {
+        w.write(&self.name);
+        w.write(&self.value);
+    }
+}
+
+impl WithWriting for DefaultValue {
+    fn write(&self, w: &mut BlobWriter) {
+        w.write(&self.name);
+        w.write_string(&self.value);
+        w.write_array(&self.sub_values);
+    }
+}
