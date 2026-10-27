@@ -1,5 +1,4 @@
 #![allow(unused)]
-#![feature(string_from_utf8_lossy_owned)]
 
 use orx_parallel::{IntoParIter, ParIter};
 
