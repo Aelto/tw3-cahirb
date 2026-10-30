@@ -129,10 +129,7 @@ pub fn assemble(symbols: &Symbols, mod_files: &[SourceFile]) -> R<RsBlob> {
         format_version: 1,
         build_platform: "x64".to_owned(),
         build_version: "1048625".to_owned(),
-        timestamp: CDateTime {
-            date: 0x7ea54400,
-            time: 0x045ee5ed,
-        },
+        timestamp: CDateTime::now(),
         build_config: "Release".to_owned(),
         string_table: Vec::new(),
         enums: Vec::new(),
