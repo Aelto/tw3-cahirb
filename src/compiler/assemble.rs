@@ -99,7 +99,9 @@ pub fn assemble(symbols: &Symbols, mod_files: &[SourceFile]) -> R<RsBlob> {
     for item in &items {
         if let Item::Function(decl) = item {
             if let Err(e) = assembler.plan_free_function(decl, &mut free) {
-                assembler.errors.push(format!("function {}: {e}", decl.name));
+                assembler
+                    .errors
+                    .push(format!("function {}: {e}", decl.name));
             }
         }
     }
@@ -128,7 +130,7 @@ pub fn assemble(symbols: &Symbols, mod_files: &[SourceFile]) -> R<RsBlob> {
         content: String::new(),
         format_version: 1,
         build_platform: "x64".to_owned(),
-        build_version: "1048625".to_owned(),
+        build_version: "1090143".to_owned(),
         timestamp: CDateTime {
             date: 0x7ea54400,
             time: 0x045ee5ed,
@@ -340,9 +342,9 @@ impl Assembler<'_> {
                 );
             }
             (AnnotationKind::ReplaceMethod, Some(class)) => {
-                plans.replace_class.push(
-                    FunctionPlan::new(decl, label, 0x40000 | 0x10000).on_class(class, class),
-                );
+                plans
+                    .replace_class
+                    .push(FunctionPlan::new(decl, label, 0x40000 | 0x10000).on_class(class, class));
             }
             (AnnotationKind::ReplaceMethod, None) => {
                 plans
@@ -406,7 +408,12 @@ impl Assembler<'_> {
         }
     }
 
-    fn class_property(&mut self, field: &FieldDecl, name: &str, class: &str) -> R<PropertyDefinition> {
+    fn class_property(
+        &mut self,
+        field: &FieldDecl,
+        name: &str,
+        class: &str,
+    ) -> R<PropertyDefinition> {
         let ty = self.symbols.resolve(&field.ty)?;
         let specifiers = &field.specifiers;
 
