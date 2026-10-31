@@ -41,6 +41,7 @@ pub fn compile(input: &CompileInput) -> Result<RsBlob, String> {
     symbols.add_enums(&mod_files, true);
     symbols.add_enums(&vanilla_files, true);
     symbols.add_rtti_enums(&rtti);
+    symbols.add_rtti_simple_types(&rtti);
 
     symbols.add_type_names(&mod_files);
     symbols.add_type_names(&vanilla_files);

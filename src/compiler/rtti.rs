@@ -15,6 +15,7 @@ pub struct RttiEnum {
 pub struct Rtti {
     pub classes: Vec<RttiClass>,
     pub enums: Vec<RttiEnum>,
+    pub simple_types: Vec<String>,
 }
 
 const ROOT_CLASSES: [&str; 2] = ["IScriptable", "ISerializable"];
@@ -54,6 +55,9 @@ pub fn load(path: &Path) -> Result<Rtti, String> {
                 base: attribute(line, "BaseClass"),
                 properties: Vec::new(),
             });
+        } else if line.starts_with("<simple ") {
+            rtti.simple_types
+                .push(attribute(line, "Name").ok_or("simple without Name")?);
         } else if line.starts_with("<property ") {
             let class = rtti.classes.last_mut().ok_or("property outside class")?;
             class.properties.push((
