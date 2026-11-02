@@ -78,6 +78,7 @@ pub struct FunctionDecl {
     pub return_type: Option<TypeRef>,
     pub body: Option<Vec<Stmt>>,
     pub annotation: Option<Annotation>,
+    pub line: u32,
 }
 
 #[derive(Debug, Clone)]

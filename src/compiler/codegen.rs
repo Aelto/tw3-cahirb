@@ -160,7 +160,9 @@ pub fn compile_body(
     };
 
     let body = decl.body.as_deref().unwrap_or_default();
-    if !body.is_empty() {
+    if decl.specifiers.is_import && decl.body.is_none() {
+        compiler.import_forward(decl)?;
+    } else if !body.is_empty() {
         for statement in body {
             compiler.statement(statement)?;
         }
@@ -1309,6 +1311,29 @@ impl<'a> FunctionCompiler<'a> {
             }
         }
 
+        Ok(())
+    }
+
+    fn import_forward(&mut self, decl: &FunctionDecl) -> R<()> {
+        if self.return_type != Type::Void {
+            self.emit(Op::Return);
+        }
+        let end = self.label();
+        let at = self.emit(Op::FinalFunc {
+            skip_offset: 0,
+            source_line: decl.line as u16,
+            function: FunctionRef::CurrentFunction,
+        });
+        self.jump_to(at, Slot::First, end);
+        for param in &decl.params {
+            self.expr(&Expr {
+                kind: ExprKind::Ident(param.name.clone()),
+                line: decl.line,
+            })?;
+        }
+        self.emit(Op::ParamEnd);
+        self.place(end);
+        self.emit(Op::Nop);
         Ok(())
     }
 
