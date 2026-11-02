@@ -311,7 +311,8 @@ impl Assembler<'_> {
             (AnnotationKind::AddMethod, Some(class)) => {
                 let flags = 0x80000
                     | visibility_flags(decl.specifiers.visibility)
-                    | kind_flags(&decl.specifiers);
+                    | kind_flags(&decl.specifiers)
+                    | if decl.specifiers.is_import { 0x201 } else { 0 };
                 plans
                     .add
                     .push(FunctionPlan::new(decl, label, flags).on_class(class, class));
@@ -421,6 +422,9 @@ impl Assembler<'_> {
         }
         if specifiers.is_const {
             flags |= 0x2;
+        }
+        if specifiers.is_import {
+            flags |= 0x4000;
         }
         if specifiers.is_saved {
             flags |= 0x8000;

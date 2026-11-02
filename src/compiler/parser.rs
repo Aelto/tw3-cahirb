@@ -144,6 +144,7 @@ impl Parser {
     }
 
     fn item(&mut self) -> PResult<Item> {
+        let line = self.line();
         let annotation = self.annotation()?;
 
         let mut class = ClassDecl::default();
@@ -189,6 +190,7 @@ impl Parser {
                 "function" | "event" => {
                     let mut function = self.function(function_specifiers)?;
                     function.annotation = annotation;
+                    function.line = line;
                     return Ok(Item::Function(function));
                 }
                 _ => return self.error("expected declaration"),
@@ -404,6 +406,7 @@ impl Parser {
     }
 
     fn function(&mut self, mut specifiers: FunctionSpecifiers) -> PResult<FunctionDecl> {
+        let line = self.line();
         if self.eat_keyword("event") {
             specifiers.is_event = true;
         } else if !self.eat_keyword("function") {
@@ -471,6 +474,7 @@ impl Parser {
             return_type,
             body,
             annotation: None,
+            line,
         })
     }
 
