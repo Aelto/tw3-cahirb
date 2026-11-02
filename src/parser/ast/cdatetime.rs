@@ -1,7 +1,10 @@
 use crate::parser::prelude::*;
 
+/// Engine timestamp, stored as two `u32` values.
 pub struct CDateTime {
+    /// Bits: year `31..20`, month `19..15`, day `14..10`
     pub date: u32,
+    /// Bits: hour `31..22`, minute `21..16`, second `15..10`, millisecond `9..0`
     pub time: u32,
 }
 
