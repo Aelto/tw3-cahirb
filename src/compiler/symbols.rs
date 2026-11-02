@@ -172,6 +172,7 @@ pub struct Symbols {
     pub enums: HashMap<String, EnumInfo>,
     pub enum_members: HashMap<String, String>,
     pub functions: HashMap<String, Rc<FunctionInfo>>,
+    pub simple_types: HashSet<String>,
 }
 
 pub fn state_class_key(machine: &str, state: &str) -> String {
@@ -333,6 +334,10 @@ impl Symbols {
                 },
             );
         }
+    }
+
+    pub fn add_rtti_simple_types(&mut self, rtti: &Rtti) {
+        self.simple_types.extend(rtti.simple_types.iter().cloned());
     }
 
     pub fn add_rtti_classes(&mut self, rtti: &Rtti) {
@@ -508,6 +513,7 @@ impl Symbols {
             name => match self.classes.get(name) {
                 Some(class) if class.is_struct => Type::Struct(name.to_owned()),
                 Some(_) => Type::Class(name.to_owned()),
+                None if self.simple_types.contains(name) => Type::Primitive(name.to_owned()),
                 None if ty.args.is_empty() => Type::Class(name.to_owned()),
                 None => Type::Primitive(name.to_owned()),
             },
