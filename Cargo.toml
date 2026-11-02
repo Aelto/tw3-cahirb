@@ -12,3 +12,4 @@ serde = "1.0.219"
 
 # alternative to rayon
 orx-parallel = "3.0.0"
+time = "0.3.55"
